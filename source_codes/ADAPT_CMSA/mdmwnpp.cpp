@@ -20,7 +20,7 @@
 #include <fstream>
 #include <float.h>
 #else
-#include "/home/marko/Desktop/CPLEX_Studio127/cplex/include/ilcplex/ilocplex.h" // path to ilocplex to include 
+#include "/opt/ibm/ILOG/CPLEX_Studio_Community2211/cplex/include/ilcplex/ilocplex.h" // path to ilocplex to include 
 #endif
 
 #define wmat(i,j) problem->w[(i)*problem->m + j]

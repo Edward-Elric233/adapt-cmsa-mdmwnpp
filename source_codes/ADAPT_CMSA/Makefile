@@ -5,8 +5,8 @@ OBJS = Timer.o
 SYSTEM     = x86-64_linux
 LIBFORMAT  = static_pic
 
-CPLEXDIR      = /home/marko/Desktop/CPLEX_Studio127/cplex#adapt the path to "cplex" directory before use
-CONCERTDIR    = /home/marko/Desktop/CPLEX_Studio127/concert#adapt the path to "concert" directory before use
+CPLEXDIR      = /opt/ibm/ILOG/CPLEX_Studio_Community2211/cplex#adapt the path to "cplex" directory before use
+CONCERTDIR    = /opt/ibm/ILOG/CPLEX_Studio_Community2211/concert#adapt the path to "concert" directory before use
 
 CCC = g++ -std=c++17  #g++
 CCOPT = -m64 -O -fPIC -fexceptions -DNDEBUG -DIL_STD
