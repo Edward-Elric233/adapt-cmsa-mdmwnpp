@@ -716,7 +716,7 @@ vector<int>  cplex_COAM(set<pair<int, int>>& C_prime, double UB = INF)
 		if(cplex.getStatus() == IloAlgorithm::Optimal)
 		   cout << "CPLEX found the optimum" << endl;
 		else
-		   cout << "CPLEX found feasible solution" << endl;*/
+		   cout << "CPLEX found feasible solution" << endl;
 
 		double lastVal = double(cplex.getObjValue());
 		// print the objective point
