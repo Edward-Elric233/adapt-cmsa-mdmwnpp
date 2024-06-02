@@ -65,7 +65,7 @@ int cmsa_greedy = 2; //KMEANS by default
 
 vector<int> s_bsf; // store  best solution
 double obj_best = INF; //best obj in CMSA
-int index = 0; // denoting an index of run of instance 
+int idx = 0; // denoting an idx of run of instance
 int seed = 1;
 /** end of CMSA parameters **/
 
@@ -762,7 +762,7 @@ vector<int>  cplex_COAM(set<pair<int, int>>& C_prime, double UB = INF)
 	d: input parameter ==> number of dimensions used to guide search
 **/
 
-// rearrange the solution according to a partial ordering relation (the smallest index of vector in partition i is smaller than that of partition j, for i < j).   
+// rearrange the solution according to a partial ordering relation (the smallest idx of vector in partition i is smaller than that of partition j, for i < j).
 void rearrange(vector<int>& solution)
 {
 
@@ -937,7 +937,7 @@ vector<int> KMeansHeuristic(int num_move = 1)
 				if (solution_prime[i] == v2)
 					solution_prime[i] = v1;
 				if (solution_prime[i] > v2)
-					solution_prime[i]--; // move index of partitioning down 
+					solution_prime[i]--; // move idx of partitioning down
 			}
 
 
@@ -959,7 +959,7 @@ vector<int> KMeansHeuristic(int num_move = 1)
 				solution[i] = move_v1;
 
 			if (solution[i] > move_v2)
-				solution[i]--; // move index of partitioning down 
+				solution[i]--; // move idx of partitioning down
 		}
 
 		// next iteration of merging
@@ -1524,11 +1524,11 @@ void CMSA()
 
 	// store the solution: 
 	ofstream myfileOut(outPath + std::to_string(problem->n) + "_" + std::to_string(problem->m)
-		+ "_" + std::to_string(problem->k) + "_" + std::to_string(problem->d)
-		+ "_" + std::to_string(problem->alg)
-		+ "_" + std::to_string(int(n_a)) + "_" + std::to_string(int(age_max))
-		+ "_" + std::to_string(int(cmsa_cplex_time))
-		+ "_" + std::to_string(index) + ".out");
+                       + "_" + std::to_string(problem->k) + "_" + std::to_string(problem->d)
+                       + "_" + std::to_string(problem->alg)
+                       + "_" + std::to_string(int(n_a)) + "_" + std::to_string(int(age_max))
+                       + "_" + std::to_string(int(cmsa_cplex_time))
+                       + "_" + std::to_string(idx) + ".out");
 	// write  into a file
 	myfileOut << "value: " << std::fixed << obj_best << endl;
 	myfileOut << "time: " << (end_time - cur_time) << endl;
@@ -1553,7 +1553,7 @@ vector<int> ProbabilisticSolutionConstruction(vector<int>& s_bs, double alpha_bs
 		if (r - 1 < mutate) // do mutation
 		{
  
-			int partition = rand() % problem->k; // which partition index to choose
+			int partition = rand() % problem->k; // which partition idx to choose
 			if (no_appear(s, s[i]) <= 1)
 			{
 				continue;
@@ -1836,7 +1836,7 @@ void Adapted_CMSA()
 		ix++;
 	}
 	if (problem->alg == DEEP_CMSAH) //Deep-CMSA
-		C_prime_vector.push_back(C_0);// first vector to index 0
+		C_prime_vector.push_back(C_0);// first vector to idx 0
 
 	double end_time = timer.elapsed_time(Timer::VIRTUAL);
 	double S_opt_prime_obj = obj_best;
@@ -1976,11 +1976,11 @@ void Adapted_CMSA()
 
 	// store the solution in a file: 
 	ofstream myfileOut(outPath + std::to_string(problem->n) + "_" + std::to_string(problem->m)
-		+ "_" + std::to_string(problem->k) + "_" + std::to_string(problem->d)
-		+ "_" + std::to_string(problem->alg)
-		+ "_" + std::to_string(int(n_a)) + "_" + std::to_string(int(age_max))
-		+ "_" + std::to_string(int(cmsa_cplex_time))
-		+ "_" + std::to_string(index) + ".out");
+                       + "_" + std::to_string(problem->k) + "_" + std::to_string(problem->d)
+                       + "_" + std::to_string(problem->alg)
+                       + "_" + std::to_string(int(n_a)) + "_" + std::to_string(int(age_max))
+                       + "_" + std::to_string(int(cmsa_cplex_time))
+                       + "_" + std::to_string(idx) + ".out");
 	// write  into a file
 	myfileOut << "value: " << std::fixed << obj_best << endl;
 	myfileOut << "time: " << (end_time - cur_time) << endl;
@@ -2064,7 +2064,7 @@ void read_parameters(int argc, char** argv) {
 		else if (strcmp(argv[iarg], "-alpha_red") == 0)  alpha_red = atof(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-t_prop") == 0)   t_prop = atof(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-seed") == 0)   seed = atoi(argv[++iarg]);
-		else if (strcmp(argv[iarg], "-index") == 0)  index = atoi(argv[++iarg]);
+		else if (strcmp(argv[iarg], "-idx") == 0) idx = atoi(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-out") == 0)   outPath = argv[++iarg];//sprintf(outPath,"%s",argv[++iarg]);
 		else if (strcmp(argv[iarg], "-ls_number") == 0) ls_number = atoi(argv[++iarg]);
 
