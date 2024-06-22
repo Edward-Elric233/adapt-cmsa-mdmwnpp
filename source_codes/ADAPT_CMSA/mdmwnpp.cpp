@@ -20,12 +20,12 @@
 #include <fstream>
 #include <float.h>
 #else
-#include "/opt/ibm/ILOG/CPLEX_Studio_Community2211/cplex/include/ilcplex/ilocplex.h" // path to ilocplex to include 
+#include "/home/edward/packages/CPLEX/cplex/include/ilcplex/ilocplex.h" // path to ilocplex to include 
 #endif
 
 #define wmat(i,j) problem->w[(i)*problem->m + j]
 #define INF 1000000000000000.0 
-#define MAXS 10
+#define MAXS 100
 
 
 
@@ -109,7 +109,7 @@ enum GREEDY
 };
 /** end of Enum types **/
 
-string outPath = "/home/marko/Desktop/Papers/MTWNPP/MTWNPP/CMSA/code/"; // out path where out files will be created after runs (shpuld be modified before use)
+string outPath = "/home/marko/Desktop/Papers/MTWNPP/MTWNPP/CMSA/code/"; // out path where out files will be created after runs (should be modified before use)
 
 ILOSOLVECALLBACK2(abortCallback, IloCplex::Aborter&, abo, double&, curbest) {
 
@@ -150,7 +150,7 @@ void ulazpod(void)
 	else {
 
 		fscanf(ul, "%d %d %d", &problem->n, &problem->m, &problem->k);
-		cout << "n: " << problem->n << " " << problem->m << " " << problem->k << endl;
+//		cout << "n: " << problem->n << " " << problem->m << " " << problem->k << endl;
 		k = problem->n;
 		l = problem->m;
 	}
@@ -328,22 +328,27 @@ void cplex_init_kojic()
 
 	if (cplex.getStatus() == IloAlgorithm::Optimal or cplex.getStatus() == IloAlgorithm::Feasible)
 	{
+        /*
 		if(cplex.getStatus() == IloAlgorithm::Optimal)
 		   cout << "CPLEX found optimal" << endl;
 		else
 		   cout << "CPLEX found feasible solution" << endl;
+         */
 
 		double lastVal = double(cplex.getObjValue());
 		// print the objective point
-		cout << "Nodes/vertices in the solution: {" << endl;
+//		cout << "Nodes/vertices in the solution: {" << endl;
 		bool first = true;
 		for (int i = 0; i < problem->n; ++i) {
 			IloNum xval = cplex.getValue(y[i]);
 
+            /*
 			if (xval > 0.9) {
 				cout << "vector " << i << " included into partitioning 1 " << endl;
 			}
+             */
 		}
+        /*
 		cout << "}" << endl;
 		cout << "value: " << lastVal << endl;
 		cout << "gap: " << double(cplex.getMIPRelativeGap()) << endl;
@@ -356,6 +361,7 @@ void cplex_init_kojic()
 		myfileOut << "value: " << lastVal << endl;
 		myfileOut << "time: " << (end_time - cur_time) << "\n";
 		myfileOut << "gap: " << double(cplex.getMIPRelativeGap()) << endl;
+         */
 	}
 
 	env.end();
@@ -500,15 +506,17 @@ vector<int> cplex_init_faria(set<pair<int, int>>& C_prime, double UB = INF)
 	/** check if a model returs useful solutions **/
 	if (cplex.getStatus() == IloAlgorithm::Optimal or cplex.getStatus() == IloAlgorithm::Feasible)
 	{
+/*
 		if(cplex.getStatus() == IloAlgorithm::Optimal)
 		   cout << "CPLEX found optimal" << endl;
 		else
 		   cout << "CPLEX found feasible solution" << endl;
+*/
 
 		double lastVal = double(cplex.getObjValue());
 		// print the objective point
 
-		cout << "Nodes/vertices in the solution: {" << endl;
+//		cout << "Nodes/vertices in the solution: {" << endl;
 		bool first = true;
 		for (int i = 0; i < problem->n; ++i) {
 			for (int j = 0; j < problem->k; ++j) {
@@ -519,6 +527,7 @@ vector<int> cplex_init_faria(set<pair<int, int>>& C_prime, double UB = INF)
 				
 			}
 		}
+/*
 		cout << "}" << endl;
 		cout << "value: " << lastVal << endl;
 		cout << "gap: " << double(cplex.getMIPRelativeGap()) << endl;
@@ -533,6 +542,7 @@ vector<int> cplex_init_faria(set<pair<int, int>>& C_prime, double UB = INF)
 			myfileOut << "time: " << std::fixed << (end_time - cur_time) << "\n";
 			myfileOut << "gap: " << std::fixed << double(cplex.getMIPRelativeGap()) << endl;
 		}
+*/
 	}
 	env.end();
 
@@ -713,10 +723,12 @@ vector<int>  cplex_COAM(set<pair<int, int>>& C_prime, double UB = INF)
 	/** check if a model returs useful solutions **/
 	if (cplex.getStatus() == IloAlgorithm::Optimal or cplex.getStatus() == IloAlgorithm::Feasible)
 	{
+        /*
 		if(cplex.getStatus() == IloAlgorithm::Optimal)
 		   cout << "CPLEX found the optimum" << endl;
 		else
 		   cout << "CPLEX found feasible solution" << endl;
+         */
 
 		double lastVal = double(cplex.getObjValue());
 		// print the objective point
@@ -733,6 +745,7 @@ vector<int>  cplex_COAM(set<pair<int, int>>& C_prime, double UB = INF)
 				}
 			}
 		}
+        /*
 		cout << "}" << endl;
 		cout << "value: " << lastVal << endl;
 		cout << "gap: " << double(cplex.getMIPRelativeGap()) << endl;
@@ -750,6 +763,7 @@ vector<int>  cplex_COAM(set<pair<int, int>>& C_prime, double UB = INF)
 			myfileOut << "time: " << std::fixed << (end_time - cur_time) << "\n";
 			myfileOut << "gap: " << std::fixed << double(cplex.getMIPRelativeGap()) << endl;
 		}
+         */
 
 	}
 	env.end();
@@ -792,7 +806,7 @@ void rearrange(vector<int>& solution)
 
 vector<int>  MDRGH(int d)
 {
-	cout << "Run MDRGH ..." << endl;
+//	cout << "Run MDRGH ..." << endl;
 
 	vector<vector<double>> L;
 	vector<int> solution(problem->n, -1);
@@ -842,6 +856,7 @@ vector<int>  MDRGH(int d)
 	if (problem->alg == MDRGHG)
 	{
 		double end_time = timer.elapsed_time(Timer::VIRTUAL);
+        /*
 		cout << "time: " << (end_time - cur_time) << "\n";
 		cout << " obj: " << objective(solution) << endl;
 		// store the solution: 
@@ -853,13 +868,14 @@ vector<int>  MDRGH(int d)
 		myfileOut << "value: " << std::fixed << obj << endl;
 		myfileOut << "time: " << (end_time - cur_time) << "\n";
 		myfileOut.close();
+         */
 	}
 	return solution;
 }
 
 vector<int> RandomizedGenerator()
 {
-	cout << "Run Randomized procedure... " << endl;
+//	cout << "Run Randomized procedure... " << endl;
 	// start with n-partitioning --> each vector in its own partition
 	vector<int> solution(problem->n, -1);
 
@@ -869,7 +885,8 @@ vector<int> RandomizedGenerator()
 		int k = rand() % problem->n;
 		while (solution[k] != -1)
 		{
-			k = rand() % problem->n; cout << "k: " << k << endl;
+			k = rand() % problem->n;
+//			cout << "k: " << k << endl;
 		}
 		solution[k] = kx;
 
@@ -892,7 +909,7 @@ vector<int> RandomizedGenerator()
 
 vector<int> KMeansHeuristic(int num_move = 1)
 {
-	cout << "Run  KMeans based heuristic ... " << endl;
+//	cout << "Run  KMeans based heuristic ... " << endl;
 	// start with n-partitioning --> each vector in its own partition
 	vector<int> solution;
 
@@ -969,17 +986,18 @@ vector<int> KMeansHeuristic(int num_move = 1)
 			break;
 	}
 
-	for (auto x : solution)
-		cout << x << " ";
+//	for (auto x : solution)
+//		cout << x << " ";
 
 	double obj = objective(solution);
-	cout << " obj : " << obj << endl;
+//	cout << " obj : " << obj << endl;
 	// solution rearrangement  neccesary for the CMSA
 	rearrange(solution);
 
 	if (problem->alg == KMEANG)
 	{
 		double end_time = timer.elapsed_time(Timer::VIRTUAL);
+        /*
 		cout << "time: " << (end_time - cur_time) << "\n";
 		// store the solution: 
 		ofstream myfileOut(outPath + std::to_string(problem->n) + "_" + std::to_string(problem->m) +
@@ -990,6 +1008,7 @@ vector<int> KMeansHeuristic(int num_move = 1)
 		myfileOut << "value: " << std::fixed << obj << endl;
 		myfileOut << "time: " << (end_time - cur_time) << "\n";
 		myfileOut.close();
+         */
 	}
 	return solution;
 }
@@ -1148,7 +1167,7 @@ double swap_fit3(vector<int>& sol, int i, int j, int q, double** p_sum)
 double move_fit2(vector<int>& sol, int i1, int p1, int i2, int p2, double** p_sum)
 {
 	if (i1 == i2) {
-		cout << "In move_fit2 i and j must be different." << endl;
+//		cout << "In move_fit2 i and j must be different." << endl;
 		exit(1);
 	}
 
@@ -1439,8 +1458,8 @@ double LSbest(vector<int>& sol)
 				fit = best_fit;
 				impr = 1;
 				double control_fit = objective(sol);
-				if (fabs(control_fit - fit) > 1)
-					cout << "LS3 Incorrect partial fitness function " << to_string(control_fit) << " vs " << to_string(fit) << endl;
+//				if (fabs(control_fit - fit) > 1)
+//					cout << "LS3 Incorrect partial fitness function " << to_string(control_fit) << " vs " << to_string(fit) << endl;
 				//cout << "LS3 " << to_string(fit) << endl;
 				continue;
 			}
@@ -1513,10 +1532,11 @@ void CMSA()
 		Adapt(Age, C_prime, S_opt_prime);
 		cmsa_iter++;
 		end_time = timer.elapsed_time(Timer::VIRTUAL); // update the execution time
-		cout << "obj: " << obj_best << endl;
+//		cout << "obj: " << obj_best << endl;
 	}
 
-	// report stats: 
+	// report stats:
+    /*
 	cout << "obj : " << obj_best << endl;
 	end_time = timer.elapsed_time(Timer::VIRTUAL);
 	cout << "time: " << (end_time - cur_time) << endl;
@@ -1534,6 +1554,7 @@ void CMSA()
 	myfileOut << "time: " << (end_time - cur_time) << endl;
 	myfileOut << "iter_best: " << cmsa_iter_best << endl;
 	myfileOut.close();
+     */
 
 }
 /** End of basic CMSA **/ 
@@ -1964,6 +1985,7 @@ void Adapted_CMSA()
 
 	// report stats:        
 	bool valid = validityCheck(s_bsf);
+    /*
 	cout << "value: " << std::fixed << obj_best << endl;
 	cout << "time: " << (end_time - cur_time) << endl;
 	cout << "CMSA iter best: " << cmsa_iter_best << endl;
@@ -1994,6 +2016,17 @@ void Adapted_CMSA()
 		myfileOut << x << " ";
 
 	myfileOut.close();
+     */
+    //Write CSV Output
+    cout << problem->n << ", "              // n
+        << problem->m << ", "               // m
+        << problem->k << ", "               // k
+        << std::fixed << obj_best << ", "   // value
+        << (end_time - cur_time) << ", "    // time
+        << valid << ", ";                   // valid
+    for (auto x : s_bsf)
+        cout << x << " ";                   // solution
+    cout << endl;
 }
 
 pair<double, vector<int>> random_solution() {
@@ -2043,7 +2076,7 @@ void read_parameters(int argc, char** argv) {
 	problem = (problem_struct*)malloc(sizeof(problem_struct));
 
 	int iarg = 1;
-	//cout << "Reading params..." << endl;
+//	cout << "Reading params..." << endl;
 	while (iarg < argc) {
 
 		if (strcmp(argv[iarg], "-f") == 0)          sprintf(imeul, "%s", argv[++iarg]);
@@ -2071,6 +2104,8 @@ void read_parameters(int argc, char** argv) {
 		else ++iarg;
 	}
 
+//    cout << "Reading params finished" << endl;
+
 	if (problem->m < problem->d) // some automatic parameters violations fixes
 		problem->d = problem->m;
 
@@ -2081,6 +2116,9 @@ void read_parameters(int argc, char** argv) {
 
 int main(int argc, char** argv)
 {
+    std::ios::sync_with_stdio(false);   //关闭和stdio同步
+    cin.tie(nullptr);   //解除cin和cout绑定刷新
+
 	srand(seed); //time(NULL));
 	std::cout << std::setprecision(4) << std::fixed;
 	cur_time = timer.elapsed_time(Timer::VIRTUAL);
