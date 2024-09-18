@@ -1,0 +1,16 @@
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20d.txt -n 100 -m 2 -k 10 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.961 -alpha_red 0.049 -t_prop 0.264 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20d.txt -n 100 -m 2 -k 20 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.961 -alpha_red 0.049 -t_prop 0.264 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20d.txt -n 100 -m 5 -k 5 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.961 -alpha_red 0.049 -t_prop 0.264 -t 1800
+Advanced basis not built.
+Advanced basis not built.
+Advanced basis not built.
+Advanced basis not built.
+Advanced basis not built.
+Advanced basis not built.
+Advanced basis not built.

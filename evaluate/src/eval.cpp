@@ -52,10 +52,10 @@ const string bin_path = work_dir + "source_codes/ADAPT_CMSA/mdmwnpp";
 const string data_dir = work_dir + "instances/";
 const unordered_map<string, string> data_file_names = {
         {"a", "mdtwnpp_500_20a.txt"},
-        {"b", "mdtwnpp_500_20b.txt"},
-        {"c", "mdtwnpp_500_20c.txt"},
-        {"d", "mdtwnpp_500_20d.txt"},
-        {"e", "mdtwnpp_500_20e.txt"},
+//        {"b", "mdtwnpp_500_20b.txt"},
+//        {"c", "mdtwnpp_500_20c.txt"},
+//        {"d", "mdtwnpp_500_20d.txt"},
+//        {"e", "mdtwnpp_500_20e.txt"},
 };
 const string results_dir = work_dir + "evaluate/results/";
 
@@ -68,9 +68,10 @@ struct Instance {
 };
 
 const vector<Instance> instances = {
-        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),
-        Instance({50, 100}, {2, 3, 4, 5, 10, 15, 20}, {3, 4}, 1200),
-        Instance({50, 100, 500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
+//        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),
+        Instance({50}, {2}, {2}, 600),
+//        Instance({50, 100}, {2, 3, 4, 5, 10, 15, 20}, {3, 4}, 1200),
+//        Instance({50, 100, 500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
 };
 
 template<typename... Args>

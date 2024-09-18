@@ -9,6 +9,7 @@
 //#include<windows.h>
 #include <vector>
 #include <unordered_map>
+#include <numeric>
 #include <set>
 #include <algorithm>    // std::shuffle
 #include <random>       // std::default_random_engine
@@ -27,7 +28,7 @@
 #define INF 1000000000000000.0 
 #define MAXS 100
 
-
+#include "Matrix.h"
 
 // using CP; 
 ILOSTLBEGIN
@@ -35,7 +36,7 @@ typedef IloArray<IloNumVarArray> NumVarMatrix;
 
 /** data structure for Problem **/
 typedef struct {
-	int n, m, k, d, alg;		/* broj elemenata i dimenzija */
+	int n, m, k, d, alg;		/* broj elemenata i dimenzija */ /* number of elements and dimensions */
 	double* w, * sum;         	/* matrix weights i array of sums of weights */
 	double* y;             	/* solutino */
 	double fv;              	/* value of obj function */
@@ -190,20 +191,16 @@ void ulazpod(void)
 
 double max_minus_min(vector<vector<double>>& sum, int l)
 {
-	double max_v = -10000000.0; double min_v = 1000000000.0;
+	double max_v = numeric_limits<double>::min();
+	double min_v = numeric_limits<double>::max();
 
 	for (int j = 0; j < problem->k; ++j)
 	{
-
 		if (max_v < sum[j][l])
 			max_v = sum[j][l];
-	}
-	for (int j = 0; j < problem->k; ++j)
-	{
-
-		if (min_v > sum[j][l])
-			min_v = sum[j][l];
-	}
+        if (min_v > sum[j][l])
+            min_v = sum[j][l];
+    }
 	return max_v - min_v;
 
 }
@@ -1079,12 +1076,12 @@ int no_appear(vector<int>& solution, int x)
 
 /** LS from GA (Aleksandar's implementation) **/
 
-double move_fit(vector<int>& sol, int i, int p, double** p_sum)
+double move_fit(vector<int>& sol, int i, int p, Matrix<double>& p_sum)
 {
 	for (int j = 0; j < problem->m; j++) {
 
-		p_sum[sol[i]][j] -= wmat(i, j);
-		p_sum[p][j] += wmat(i, j);
+		p_sum(sol[i], j) -= wmat(i, j);
+		p_sum(p, j) += wmat(i, j);
 	}
 	double new_fit = 0;
 
@@ -1092,79 +1089,79 @@ double move_fit(vector<int>& sol, int i, int p, double** p_sum)
 		for (int j = 0; j < z; j++)
 			for (int q = 0; q < problem->m; q++) {
 
-				double diff = abs(p_sum[z][q] - p_sum[j][q]); // partial fit. evaluation
-				if (diff > new_fit)
+                double diff = abs(p_sum(z, q) - p_sum(j, q)); // partial fit. evaluation
+                if (diff > new_fit)
 					new_fit = diff;
 
 			}
 	}
 	for (int j = 0; j < problem->m; j++) {
-		p_sum[sol[i]][j] += wmat(i, j);
-		p_sum[p][j] -= wmat(i, j);
+		p_sum(sol[i], j) += wmat(i, j);
+		p_sum(p, j) -= wmat(i, j);
 	}
 	return new_fit;
 }
 
-double swap_fit(vector<int>& sol, int i, int j, double** p_sum)
+double swap_fit(vector<int>& sol, int i, int j, Matrix<double>& p_sum)
 {
 	for (int s = 0; s < problem->m; s++) {
-		p_sum[sol[i]][s] -= wmat(i, s);
-		p_sum[sol[j]][s] -= wmat(j, s);
-		p_sum[sol[i]][s] += wmat(j, s);
-		p_sum[sol[j]][s] += wmat(i, s);
+		p_sum(sol[i], s) -= wmat(i, s);
+		p_sum(sol[j], s) -= wmat(j, s);
+		p_sum(sol[i], s) += wmat(j, s);
+		p_sum(sol[j], s) += wmat(i, s);
 	}
 	double new_fit = 0;
 	for (int z = 1; z < problem->k; z++) {
 		for (int j = 0; j < z; j++)
 			for (int q = 0; q < problem->m; q++) {
-				double diff = abs(p_sum[z][q] - p_sum[j][q]); // partial fit. evaluation
+				double diff = abs(p_sum(z, q) - p_sum(j, q)); // partial fit. evaluation
 				if (diff > new_fit)
 					new_fit = diff;
 			}
 	}
 	for (int s = 0; s < problem->m; s++) {
-		p_sum[sol[i]][s] += wmat(i, s);
-		p_sum[sol[j]][s] += wmat(j, s);
-		p_sum[sol[i]][s] -= wmat(j, s);
-		p_sum[sol[j]][s] -= wmat(i, s);
+		p_sum(sol[i], s) += wmat(i, s);
+		p_sum(sol[j], s) += wmat(j, s);
+		p_sum(sol[i], s) -= wmat(j, s);
+		p_sum(sol[j], s) -= wmat(i, s);
 	}
 	return new_fit;
 }
 
-double swap_fit3(vector<int>& sol, int i, int j, int q, double** p_sum)
+double swap_fit3(vector<int>& sol, int i, int j, int q, Matrix<double>& p_sum)
 {
 	// i gets what j has
 	// j gets what q has
 	// q gets what i has
 	for (int s = 0; s < problem->m; s++) {
-		p_sum[sol[i]][s] -= wmat(i, s);
-		p_sum[sol[j]][s] -= wmat(j, s);
-		p_sum[sol[q]][s] -= wmat(q, s);
-		p_sum[sol[j]][s] += wmat(i, s); // i is moved to partition where is currently j
-		p_sum[sol[q]][s] += wmat(j, s); // j is moved to partition where is currently q
-		p_sum[sol[i]][s] += wmat(q, s); // q is moved to partition where is currently i
+		p_sum(sol[i], s) -= wmat(i, s);
+		p_sum(sol[j], s) -= wmat(j, s);
+		p_sum(sol[q], s) -= wmat(q, s);
+		p_sum(sol[j], s) += wmat(i, s); // i is moved to partition where is currently j
+		p_sum(sol[q], s) += wmat(j, s); // j is moved to partition where is currently q
+		p_sum(sol[i], s) += wmat(q, s); // q is moved to partition where is currently i
 	}
 	double new_fit = 0;
 	for (int z = 1; z < problem->k; z++) {
 		for (int j = 0; j < z; j++)
 			for (int r = 0; r < problem->m; r++) {
-				double diff = abs(p_sum[z][r] - p_sum[j][r]); // partial fit. evaluation
+				double diff = abs(p_sum(z, r) - p_sum(j, r)); // partial fit. evaluation
 				if (diff > new_fit)
 					new_fit = diff;
 			}
 	}
 	for (int s = 0; s < problem->m; s++) {
-		p_sum[sol[i]][s] += wmat(i, s);
-		p_sum[sol[j]][s] += wmat(j, s);
-		p_sum[sol[q]][s] += wmat(q, s);
-		p_sum[sol[j]][s] -= wmat(i, s);
-		p_sum[sol[q]][s] -= wmat(j, s);
-		p_sum[sol[i]][s] -= wmat(q, s);
+		p_sum(sol[i], s) += wmat(i, s);
+		p_sum(sol[j], s) += wmat(j, s);
+		p_sum(sol[q], s) += wmat(q, s);
+		p_sum(sol[j], s) -= wmat(i, s);
+		p_sum(sol[q], s) -= wmat(j, s);
+		p_sum(sol[i], s) -= wmat(q, s);
 	}
 	return new_fit;
 }
 
-double move_fit2(vector<int>& sol, int i1, int p1, int i2, int p2, double** p_sum)
+double move_fit2(vector<int>& sol, int i1, int p1, int i2, int p2, Matrix<double>& p_sum)
 {
 	if (i1 == i2) {
 //		cout << "In move_fit2 i and j must be different." << endl;
@@ -1173,27 +1170,27 @@ double move_fit2(vector<int>& sol, int i1, int p1, int i2, int p2, double** p_su
 
 	for (int j = 0; j < problem->m; j++) {
 
-		p_sum[sol[i1]][j] -= wmat(i1, j);
-		p_sum[p1][j] += wmat(i1, j);
-		p_sum[sol[i2]][j] -= wmat(i2, j);
-		p_sum[p2][j] += wmat(i2, j);
+		p_sum(sol[i1], j) -= wmat(i1, j);
+		p_sum(p1, j) += wmat(i1, j);
+		p_sum(sol[i2], j) -= wmat(i2, j);
+		p_sum(p2, j) += wmat(i2, j);
 	}
 	double new_fit = 0;
 
 	for (int z = 1; z < problem->k; z++) {
 		for (int j = 0; j < z; j++)
 			for (int q = 0; q < problem->m; q++) {
-				double diff = abs(p_sum[z][q] - p_sum[j][q]); // partial fit. evaluation
+				double diff = abs(p_sum(z, q) - p_sum(j, q)); // partial fit. evaluation
 				if (diff > new_fit)
 					new_fit = diff;
 
 			}
 	}
 	for (int j = 0; j < problem->m; j++) {
-		p_sum[sol[i1]][j] += wmat(i1, j);
-		p_sum[p1][j] -= wmat(i1, j);
-		p_sum[sol[i2]][j] += wmat(i2, j);
-		p_sum[p2][j] -= wmat(i2, j);
+		p_sum(sol[i1], j) += wmat(i1, j);
+		p_sum(p1, j) -= wmat(i1, j);
+		p_sum(sol[i2], j) += wmat(i2, j);
+		p_sum(p2, j) -= wmat(i2, j);
 	}
 	return new_fit;
 }
@@ -1203,17 +1200,12 @@ double LSfirst(vector<int>& sol)
 
 	int k = problem->k;
 	double fit = objective(sol); //problem.fitness(sol, k);
-	double** p_sum = new double* [k];
-
-	for (int i = 0; i < k; i++) {
-		p_sum[i] = new double[problem->m];
-		for (int j = 0; j < problem->m; j++)
-			p_sum[i][j] = 0;
-	}
+	static Matrix<double> p_sum(k, problem->m);
+    p_sum.reset();
 
 	for (int i = 0; i < problem->n; i++)
 		for (int j = 0; j < problem->m; j++)
-			p_sum[sol[i]][j] += wmat(i, j);
+			p_sum(sol[i], j) += wmat(i, j);
 
 	int impr = 1;
 	int nx = problem->n; // n = 1
@@ -1238,8 +1230,8 @@ double LSfirst(vector<int>& sol)
 				if (new_fit < fit - 0.1) {
 					for (int j = 0; j < problem->m; j++) {
 
-						p_sum[sol[i]][j] -= wmat(i, j);
-						p_sum[p][j] += wmat(i, j);
+						p_sum(sol[i], j) -= wmat(i, j);
+						p_sum(p, j) += wmat(i, j);
 					}
 
 					sol[i] = p;
@@ -1272,10 +1264,10 @@ double LSfirst(vector<int>& sol)
 
 					for (int s = 0; s < problem->m; s++) {
 
-						p_sum[sol[i]][s] -= wmat(i, s);
-						p_sum[sol[j]][s] -= wmat(j, s);
-						p_sum[sol[i]][s] += wmat(j, s);
-						p_sum[sol[j]][s] += wmat(i, s);
+						p_sum(sol[i], s) -= wmat(i, s);
+						p_sum(sol[j], s) -= wmat(j, s);
+						p_sum(sol[i], s) += wmat(j, s);
+						p_sum(sol[j], s) += wmat(i, s);
 					}
 					int pi = sol[i];
 					sol[i] = sol[j];
@@ -1294,9 +1286,6 @@ double LSfirst(vector<int>& sol)
 		}
 	}
 
-	for (int i = 0; i < k; i++)
-		delete[] p_sum[i];
-
 	return fit;
 }
 
@@ -1305,17 +1294,12 @@ double LSbest(vector<int>& sol)
 	int n = problem->n;
 	int k = problem->k;
 	double fit = objective(sol);
-	double** p_sum = new double* [k];
-
-	for (int i = 0; i < k; i++) {
-		p_sum[i] = new double[problem->m];
-		for (int j = 0; j < problem->m; j++)
-			p_sum[i][j] = 0;
-	}
+    static Matrix<double> p_sum(k, problem->m);
+    p_sum.reset();
 
 	for (int i = 0; i < problem->n; i++)
 		for (int j = 0; j < problem->m; j++)
-			p_sum[sol[i]][j] += wmat(i, j);
+			p_sum(sol[i], j) += wmat(i, j);
 
 	// pre-processing counter of elements appearances 
 	unordered_map<int, int> maps_count;
@@ -1360,8 +1344,8 @@ double LSbest(vector<int>& sol)
 
 			for (int j = 0; j < problem->m; j++) {
 
-				p_sum[sol[best_i]][j] -= wmat(best_i, j);
-				p_sum[best_p][j] += wmat(best_i, j);
+				p_sum(sol[best_i], j) -= wmat(best_i, j);
+				p_sum(best_p, j) += wmat(best_i, j);
 			}
 
 			sol[best_i] = best_p;
@@ -1395,10 +1379,10 @@ double LSbest(vector<int>& sol)
 			if (impr) {
 				for (int s = 0; s < problem->m; s++) {
 
-					p_sum[sol[best_i]][s] -= wmat(best_i, s);
-					p_sum[sol[best_j]][s] -= wmat(best_j, s);
-					p_sum[sol[best_i]][s] += wmat(best_j, s);
-					p_sum[sol[best_j]][s] += wmat(best_i, s);
+					p_sum(sol[best_i], s) -= wmat(best_i, s);
+					p_sum(sol[best_j], s) -= wmat(best_j, s);
+					p_sum(sol[best_i], s) += wmat(best_j, s);
+					p_sum(sol[best_j], s) += wmat(best_i, s);
 				}
 				int pi = sol[best_i];
 				sol[best_i] = sol[best_j];
@@ -1444,12 +1428,12 @@ double LSbest(vector<int>& sol)
 				// q gets what i has (no changes in maps_count structure)
 				for (int s = 0; s < problem->m; s++) {
 
-					p_sum[sol[best_i]][s] -= wmat(best_i, s);
-					p_sum[sol[best_j]][s] -= wmat(best_j, s);
-					p_sum[sol[best_q]][s] -= wmat(best_q, s);
-					p_sum[sol[best_j]][s] += wmat(best_i, s);
-					p_sum[sol[best_q]][s] += wmat(best_j, s);
-					p_sum[sol[best_i]][s] += wmat(best_q, s);
+					p_sum(sol[best_i], s) -= wmat(best_i, s);
+					p_sum(sol[best_j], s) -= wmat(best_j, s);
+					p_sum(sol[best_q], s) -= wmat(best_q, s);
+					p_sum(sol[best_j], s) += wmat(best_i, s);
+					p_sum(sol[best_q], s) += wmat(best_j, s);
+					p_sum(sol[best_i], s) += wmat(best_q, s);
 				}
 				int pi = sol[best_i];
 				sol[best_i] = sol[best_j];
@@ -1466,8 +1450,6 @@ double LSbest(vector<int>& sol)
 		}
 	}
 
-	for (int i = 0; i < k; i++)
-		delete[] p_sum[i];
 
 	// due to small error accumulation in LS2 we just recalculate objective using standard full objective function 
 	fit = objective(sol);
