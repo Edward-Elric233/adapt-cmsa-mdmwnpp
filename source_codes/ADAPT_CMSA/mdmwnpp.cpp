@@ -1302,14 +1302,12 @@ double LSbest(vector<int>& sol)
 			p_sum(sol[i], j) += wmat(i, j);
 
 	// pre-processing counter of elements appearances 
-	unordered_map<int, int> maps_count;
-	for (auto& x : sol)
-	{
-		if (maps_count.find(x) == maps_count.end())
-			maps_count.insert({ x, 1 });
-		else
-			maps_count[x]++;
-	}
+    static vector<int> maps_count(k, 0);
+    std::fill(maps_count.begin(), maps_count.end(), 0);
+    for (auto x: sol) {
+        ++maps_count[x];
+    }
+
 	int impr = 1;
 	while (impr) {
 		impr = 0;
