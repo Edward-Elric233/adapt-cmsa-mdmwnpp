@@ -68,8 +68,8 @@ struct Instance {
 };
 
 const vector<Instance> instances = {
-//        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),
         Instance({50}, {2}, {2}, 600),
+//        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),
 //        Instance({50, 100}, {2, 3, 4, 5, 10, 15, 20}, {3, 4}, 1200),
 //        Instance({50, 100, 500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
 };
@@ -170,6 +170,8 @@ void check4solution(const vector<vector<double>> &vectors, int n, int m, int k, 
         double diff = sums.back() - sums[0];
         if (diff > value + kEPS) {
             throw runtime_error(join_fields("Max diff on col", j , "is", diff, ", larger than", value));
+        } else if (diff < value - kEPS) {
+            throw runtime_error(join_fields("Max diff on col", j , "is", diff, ", smaller than", value));
         }
     }
     cout << "success" << endl;

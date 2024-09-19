@@ -1070,56 +1070,50 @@ int no_appear(vector<int>& solution, int x)
 
 /** LS from GA (Aleksandar's implementation) **/
 
-double move_fit(vector<int>& sol, int i, int p, MatrixColMajor<double>& p_sum)
-{
-	for (int j = 0; j < problem->m; j++) {
-
-		p_sum(sol[i], j) -= wmat(i, j);
-		p_sum(p, j) += wmat(i, j);
+double move_fit(const vector<int>& sol, int i, int p, const MatrixColMajor<double>& p_sum) {
+    double new_fit = numeric_limits<double>::min();
+    for (int j = 0; j < problem->m; j++) {
+        double minx = numeric_limits<double>::max();
+        double maxx = numeric_limits<double>::min();
+        double diff = wmat(i, j);
+        for (int s = 0; s < problem->k; ++s) {
+            double t = p_sum(s, j);
+            if (s == sol[i]) {
+                t -= diff;
+            } else if (s == p) {
+                t += diff;
+            }
+            minx = std::min(minx, t);
+            maxx = std::max(maxx, t);
+        }
+        new_fit = std::max(new_fit, maxx - minx);
 	}
-	double new_fit = 0;
 
-	for (int z = 1; z < problem->k; z++) {
-		for (int j = 0; j < z; j++)
-			for (int q = 0; q < problem->m; q++) {
-
-                double diff = abs(p_sum(z, q) - p_sum(j, q)); // partial fit. evaluation
-                if (diff > new_fit)
-					new_fit = diff;
-
-			}
-	}
-	for (int j = 0; j < problem->m; j++) {
-		p_sum(sol[i], j) += wmat(i, j);
-		p_sum(p, j) -= wmat(i, j);
-	}
 	return new_fit;
 }
 
-double swap_fit(vector<int>& sol, int i, int j, MatrixColMajor<double>& p_sum)
-{
-	for (int s = 0; s < problem->m; s++) {
-		p_sum(sol[i], s) -= wmat(i, s);
-		p_sum(sol[j], s) -= wmat(j, s);
-		p_sum(sol[i], s) += wmat(j, s);
-		p_sum(sol[j], s) += wmat(i, s);
-	}
-	double new_fit = 0;
-	for (int z = 1; z < problem->k; z++) {
-		for (int j = 0; j < z; j++)
-			for (int q = 0; q < problem->m; q++) {
-				double diff = abs(p_sum(z, q) - p_sum(j, q)); // partial fit. evaluation
-				if (diff > new_fit)
-					new_fit = diff;
-			}
-	}
-	for (int s = 0; s < problem->m; s++) {
-		p_sum(sol[i], s) += wmat(i, s);
-		p_sum(sol[j], s) += wmat(j, s);
-		p_sum(sol[i], s) -= wmat(j, s);
-		p_sum(sol[j], s) -= wmat(i, s);
-	}
-	return new_fit;
+
+double swap_fit(const vector<int>& sol, int i1, int i2, const MatrixColMajor<double>& p_sum) {
+    double new_fit = numeric_limits<double>::min();
+    for (int j = 0; j < problem->m; j++) {
+        double minx = numeric_limits<double>::max();
+        double maxx = numeric_limits<double>::min();
+        double diff = wmat(i1, j) - wmat(i2, j);
+        for (int s = 0; s < problem->k; ++s) {
+            double t = p_sum(s, j);
+            if (s == sol[i1]) {
+                t -= diff;
+            } else if (s == sol[i2]) {
+                t += diff;
+            }
+            minx = std::min(minx, t);
+            maxx = std::max(maxx, t);
+        }
+        new_fit = std::max(new_fit, maxx - minx);
+    }
+
+    return new_fit;
+
 }
 
 double swap_fit3(vector<int>& sol, int i, int j, int q, MatrixColMajor<double>& p_sum)
@@ -1135,15 +1129,17 @@ double swap_fit3(vector<int>& sol, int i, int j, int q, MatrixColMajor<double>& 
 		p_sum(sol[q], s) += wmat(j, s); // j is moved to partition where is currently q
 		p_sum(sol[i], s) += wmat(q, s); // q is moved to partition where is currently i
 	}
-	double new_fit = 0;
-	for (int z = 1; z < problem->k; z++) {
-		for (int j = 0; j < z; j++)
-			for (int r = 0; r < problem->m; r++) {
-				double diff = abs(p_sum(z, r) - p_sum(j, r)); // partial fit. evaluation
-				if (diff > new_fit)
-					new_fit = diff;
-			}
-	}
+	double new_fit = numeric_limits<double>::min();
+    for (int j = 0; j < problem->m; j++) {
+        double minx = numeric_limits<double>::max();
+        double maxx = numeric_limits<double>::min();
+        for (int s = 0; s < problem->k; ++s) {
+            double t = p_sum(s, j);
+            minx = std::min(minx, t);
+            maxx = std::max(maxx, t);
+        }
+        new_fit = std::max(new_fit, maxx - minx);
+    }
 	for (int s = 0; s < problem->m; s++) {
 		p_sum(sol[i], s) += wmat(i, s);
 		p_sum(sol[j], s) += wmat(j, s);
@@ -1157,11 +1153,6 @@ double swap_fit3(vector<int>& sol, int i, int j, int q, MatrixColMajor<double>& 
 
 double move_fit2(vector<int>& sol, int i1, int p1, int i2, int p2, MatrixColMajor<double>& p_sum)
 {
-	if (i1 == i2) {
-//		cout << "In move_fit2 i and j must be different." << endl;
-		exit(1);
-	}
-
 	for (int j = 0; j < problem->m; j++) {
 
 		p_sum(sol[i1], j) -= wmat(i1, j);
@@ -1169,17 +1160,17 @@ double move_fit2(vector<int>& sol, int i1, int p1, int i2, int p2, MatrixColMajo
 		p_sum(sol[i2], j) -= wmat(i2, j);
 		p_sum(p2, j) += wmat(i2, j);
 	}
-	double new_fit = 0;
-
-	for (int z = 1; z < problem->k; z++) {
-		for (int j = 0; j < z; j++)
-			for (int q = 0; q < problem->m; q++) {
-				double diff = abs(p_sum(z, q) - p_sum(j, q)); // partial fit. evaluation
-				if (diff > new_fit)
-					new_fit = diff;
-
-			}
-	}
+    double new_fit = numeric_limits<double>::min();
+    for (int j = 0; j < problem->m; j++) {
+        double minx = numeric_limits<double>::max();
+        double maxx = numeric_limits<double>::min();
+        for (int s = 0; s < problem->k; ++s) {
+            double t = p_sum(s, j);
+            minx = std::min(minx, t);
+            maxx = std::max(maxx, t);
+        }
+        new_fit = std::max(new_fit, maxx - minx);
+    }
 	for (int j = 0; j < problem->m; j++) {
 		p_sum(sol[i1], j) += wmat(i1, j);
 		p_sum(p1, j) -= wmat(i1, j);
@@ -1287,13 +1278,27 @@ double LSbest(vector<int>& sol)
 {
 	int n = problem->n;
 	int k = problem->k;
-	double fit = objective(sol);
+//	double fit = objective(sol);
     static MatrixColMajor<double> p_sum(k, problem->m);
     p_sum.reset();
 
-    for (int j = 0; j < problem->m; j++)
-        for (int i = 0; i < problem->n; i++)
+    for (int j = 0; j < problem->m; j++) {
+        for (int i = 0; i < problem->n; i++) {
             p_sum(sol[i], j) += wmat(i, j);
+        }
+    }
+
+    double fit = numeric_limits<double>::min();
+    for (int j = 0; j < problem->m; ++j) {
+        double minx = numeric_limits<double>::max();
+        double maxx = numeric_limits<double>::min();
+        for (int i = 0; i < k; ++i) {
+            double t = p_sum(i, j);
+            minx = std::min(minx, t);
+            maxx = std::max(maxx, t);
+        }
+        fit = std::max(fit, maxx - minx);
+    }
 
 	// pre-processing counter of elements appearances 
     static vector<int> maps_count(k, 0);
@@ -1335,7 +1340,6 @@ double LSbest(vector<int>& sol)
 			maps_count[best_p]++;
 
 			for (int j = 0; j < problem->m; j++) {
-
 				p_sum(sol[best_i], j) -= wmat(best_i, j);
 				p_sum(best_p, j) += wmat(best_i, j);
 			}
@@ -1370,11 +1374,9 @@ double LSbest(vector<int>& sol)
 			}
 			if (impr) {
 				for (int s = 0; s < problem->m; s++) {
-
-					p_sum(sol[best_i], s) -= wmat(best_i, s);
-					p_sum(sol[best_j], s) -= wmat(best_j, s);
-					p_sum(sol[best_i], s) += wmat(best_j, s);
-					p_sum(sol[best_j], s) += wmat(best_i, s);
+                    double diff = wmat(best_i, s) - wmat(best_j, s);
+					p_sum(sol[best_i], s) -= diff;
+					p_sum(sol[best_j], s) += diff;
 				}
 				int pi = sol[best_i];
 				sol[best_i] = sol[best_j];
@@ -1443,7 +1445,8 @@ double LSbest(vector<int>& sol)
 	}
 
 
-	// due to small error accumulation in LS2 we just recalculate objective using standard full objective function 
+	// due to small error accumulation in LS2 we just recalculate objective using standard full objective function
+    //TODO: 是否可以取消?
 	fit = objective(sol);
 
 	return fit;
