@@ -221,7 +221,7 @@ void check() {  //检查运行结果正确性
 int main() {
     try {
 //        run_single_instance();
-//        run_instances();
+        run_instances();
         check();
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;

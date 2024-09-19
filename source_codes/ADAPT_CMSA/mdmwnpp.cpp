@@ -189,17 +189,18 @@ void ulazpod(void)
 
 
 
-double max_minus_min(vector<vector<double>>& sum, int l)
+double max_minus_min(const Matrix<double>& sum, int l)
 {
 	double max_v = numeric_limits<double>::min();
 	double min_v = numeric_limits<double>::max();
 
 	for (int j = 0; j < problem->k; ++j)
 	{
-		if (max_v < sum[j][l])
-			max_v = sum[j][l];
-        if (min_v > sum[j][l])
-            min_v = sum[j][l];
+        double t = sum(j, l);
+		if (max_v < t)
+			max_v = t;
+        if (min_v > t)
+            min_v = t;
     }
 	return max_v - min_v;
 
@@ -212,31 +213,24 @@ double objective(vector<int>& solution, int k = -1)
 	if (solution.empty())
 		return INF;
 	double value = 0.0;
-	vector<vector<double>> sum;  // sum[i][dx]: sum of coordinate dx from {0,...,m-1} of vectors in partition i 
+	// vector<vector<double>> sum;  // sum[i][dx]: sum of coordinate dx from {0,...,m-1} of vectors in partition i
+    static Matrix<double> sum(problem->k, problem->m);
+    sum.reset();
 
 	int kval = k;
 
 	if (kval == -1) // if alg == 3 (KMeans based); problem->k is replaced to k (allowed number of partitions)
 		kval = problem->k;
 
-	for (int i = 0; i < kval; ++i)
-	{
-		vector<double> sum_i;
-		for (int j = 0; j < problem->m; ++j)
-			sum_i.push_back(0.0);
-
-		sum.push_back(sum_i);
-	}
-
 	int index = 0;
 	for (int px : solution)
 	{
 
 		for (int j = 0; j < problem->m; ++j)
-			sum[px][j] += wmat(index, j);
+			sum(px, j) += wmat(index, j);
 		index++; // next vector
 	}
-	double obj = -INF;
+	double obj = numeric_limits<double>::min();
 
 	for (int j = 0; j < problem->m; ++j) // through coordinates:
 	{
