@@ -14,29 +14,29 @@
  * 按照行优先连续存储的二维数组
  */
 template <typename T>
-class Matrix {
+class MatrixRowMajor {
     int n_, m_;
     T* p_ = nullptr;
 public:
-    Matrix(int n, int m)
+    MatrixRowMajor(int n, int m)
     : n_(n), m_(m) {
         if (n <= 0 || m <= 0) {
             throw std::invalid_argument("Matrix dimensions must be positive");
         }
         p_ = new T[n_ * m_];
     }
-    ~Matrix() {
+    ~MatrixRowMajor() {
         delete[] p_;
     }
-    Matrix(const Matrix& other) = delete;
-    void operator= (const Matrix& other) = delete;
-    Matrix(Matrix&& other) noexcept
+    MatrixRowMajor(const MatrixRowMajor& other) = delete;
+    void operator= (const MatrixRowMajor& other) = delete;
+    MatrixRowMajor(MatrixRowMajor&& other) noexcept
     : n_(other.n_), m_(other.m_), p_(other.p_) {
         other.p_ = nullptr;
         other.n_ = 0;
         other.m_= 0 ;
     }
-    Matrix& operator= (Matrix&& other) noexcept {
+    MatrixRowMajor& operator= (MatrixRowMajor&& other) noexcept {
         if (this != &other) {
             delete[] p_;
             n_ = other.n_;
@@ -62,9 +62,72 @@ public:
     int getCols() const {
         return m_;
     }
-    T* operator[] (int x) {
-        assert(x >= 0 && x < n_);
-        return p_ + x * m_;
+    void reset() {
+        assert(p_ != nullptr);
+        if constexpr (std::is_trivially_default_constructible<T>::value) {
+            // 对于平凡类型，使用 memset
+            std::memset(p_, 0, n_ * m_ * sizeof(T));
+        } else {
+            // 对于非平凡类型，使用默认构造函数
+            for (int i = 0; i < n_ * m_; ++i) {
+                p_[i] = T();
+            }
+        }
+    }
+};
+
+
+/*!
+ * 按照列优先连续存储的二维数组
+ */
+template <typename T>
+class MatrixColMajor {
+    int n_, m_;
+    T* p_ = nullptr;
+public:
+    MatrixColMajor(int n, int m)
+            : n_(n), m_(m) {
+        if (n <= 0 || m <= 0) {
+            throw std::invalid_argument("Matrix dimensions must be positive");
+        }
+        p_ = new T[n_ * m_];
+    }
+    ~MatrixColMajor() {
+        delete[] p_;
+    }
+    MatrixColMajor(const MatrixColMajor& other) = delete;
+    void operator= (const MatrixColMajor& other) = delete;
+    MatrixColMajor(MatrixColMajor&& other) noexcept
+            : n_(other.n_), m_(other.m_), p_(other.p_) {
+        other.p_ = nullptr;
+        other.n_ = 0;
+        other.m_= 0 ;
+    }
+    MatrixColMajor& operator= (MatrixColMajor&& other) noexcept {
+        if (this != &other) {
+            delete[] p_;
+            n_ = other.n_;
+            m_ = other.m_;
+            p_ = other.p_;
+            other.p_ = nullptr;
+            other.n_ = 0;
+            other.m_= 0 ;
+        }
+        return *this;
+    }
+    T& operator() (int x, int y) {
+        assert(x >= 0 && x < n_ && y >= 0 && y < m_);
+        return p_[y * n_ + x];
+    }
+    const T& operator() (int x, int y) const {
+        assert(x >= 0 && x < n_ && y >= 0 && y < m_);
+        return p_[y * n_ + x];
+    }
+    int getRows() const {
+        return n_;
+    }
+    int getCols() const {
+        return m_;
     }
     void reset() {
         assert(p_ != nullptr);

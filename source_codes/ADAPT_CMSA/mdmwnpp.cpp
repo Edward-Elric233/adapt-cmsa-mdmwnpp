@@ -189,7 +189,7 @@ void ulazpod(void)
 
 
 
-double max_minus_min(const Matrix<double>& sum, int l)
+double max_minus_min(const MatrixColMajor<double>& sum, int l)
 {
 	double max_v = numeric_limits<double>::min();
 	double min_v = numeric_limits<double>::max();
@@ -214,7 +214,7 @@ double objective(vector<int>& solution, int k = -1)
 		return INF;
 	double value = 0.0;
 	// vector<vector<double>> sum;  // sum[i][dx]: sum of coordinate dx from {0,...,m-1} of vectors in partition i
-    static Matrix<double> sum(problem->k, problem->m);
+    static MatrixColMajor<double> sum(problem->k, problem->m);
     sum.reset();
 
 	int kval = k;
@@ -222,14 +222,14 @@ double objective(vector<int>& solution, int k = -1)
 	if (kval == -1) // if alg == 3 (KMeans based); problem->k is replaced to k (allowed number of partitions)
 		kval = problem->k;
 
-	int index = 0;
-	for (int px : solution)
-	{
+    for (int j = 0; j < problem->m; ++j) {
+        int index = 0;
+        for (int px : solution) {
+            sum(px, j) += wmat(index, j);
+            index++; // next vector
+        }
+    }
 
-		for (int j = 0; j < problem->m; ++j)
-			sum(px, j) += wmat(index, j);
-		index++; // next vector
-	}
 	double obj = numeric_limits<double>::min();
 
 	for (int j = 0; j < problem->m; ++j) // through coordinates:
@@ -1070,7 +1070,7 @@ int no_appear(vector<int>& solution, int x)
 
 /** LS from GA (Aleksandar's implementation) **/
 
-double move_fit(vector<int>& sol, int i, int p, Matrix<double>& p_sum)
+double move_fit(vector<int>& sol, int i, int p, MatrixColMajor<double>& p_sum)
 {
 	for (int j = 0; j < problem->m; j++) {
 
@@ -1096,7 +1096,7 @@ double move_fit(vector<int>& sol, int i, int p, Matrix<double>& p_sum)
 	return new_fit;
 }
 
-double swap_fit(vector<int>& sol, int i, int j, Matrix<double>& p_sum)
+double swap_fit(vector<int>& sol, int i, int j, MatrixColMajor<double>& p_sum)
 {
 	for (int s = 0; s < problem->m; s++) {
 		p_sum(sol[i], s) -= wmat(i, s);
@@ -1122,7 +1122,7 @@ double swap_fit(vector<int>& sol, int i, int j, Matrix<double>& p_sum)
 	return new_fit;
 }
 
-double swap_fit3(vector<int>& sol, int i, int j, int q, Matrix<double>& p_sum)
+double swap_fit3(vector<int>& sol, int i, int j, int q, MatrixColMajor<double>& p_sum)
 {
 	// i gets what j has
 	// j gets what q has
@@ -1155,7 +1155,7 @@ double swap_fit3(vector<int>& sol, int i, int j, int q, Matrix<double>& p_sum)
 	return new_fit;
 }
 
-double move_fit2(vector<int>& sol, int i1, int p1, int i2, int p2, Matrix<double>& p_sum)
+double move_fit2(vector<int>& sol, int i1, int p1, int i2, int p2, MatrixColMajor<double>& p_sum)
 {
 	if (i1 == i2) {
 //		cout << "In move_fit2 i and j must be different." << endl;
@@ -1194,7 +1194,7 @@ double LSfirst(vector<int>& sol)
 
 	int k = problem->k;
 	double fit = objective(sol); //problem.fitness(sol, k);
-	static Matrix<double> p_sum(k, problem->m);
+	static MatrixColMajor<double> p_sum(k, problem->m);
     p_sum.reset();
 
 	for (int i = 0; i < problem->n; i++)
@@ -1288,12 +1288,12 @@ double LSbest(vector<int>& sol)
 	int n = problem->n;
 	int k = problem->k;
 	double fit = objective(sol);
-    static Matrix<double> p_sum(k, problem->m);
+    static MatrixColMajor<double> p_sum(k, problem->m);
     p_sum.reset();
 
-	for (int i = 0; i < problem->n; i++)
-		for (int j = 0; j < problem->m; j++)
-			p_sum(sol[i], j) += wmat(i, j);
+    for (int j = 0; j < problem->m; j++)
+        for (int i = 0; i < problem->n; i++)
+            p_sum(sol[i], j) += wmat(i, j);
 
 	// pre-processing counter of elements appearances 
     static vector<int> maps_count(k, 0);
