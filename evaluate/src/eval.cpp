@@ -48,7 +48,7 @@ const unordered_map<int, Param> params = {
 };
 
 const string work_dir = "/home/edward/code/cpp/adapt-cmsa-mdmwnpp/";
-const string bin_path = work_dir + "source_codes/ADAPT_CMSA/mdmwnpp";
+const string bin_path = work_dir + "source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp";
 const string data_dir = work_dir + "instances/";
 const unordered_map<string, string> data_file_names = {
         {"a", "mdtwnpp_500_20a.txt"},
@@ -68,9 +68,10 @@ struct Instance {
 };
 
 const vector<Instance> instances = {
-        Instance({50}, {2}, {2}, 600),
-//        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),
+//        Instance({50}, {2}, {2}, 600),
+        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),
 //        Instance({50, 100}, {2, 3, 4, 5, 10, 15, 20}, {3, 4}, 1200),
+        Instance({50, 100}, {10, 15, 20}, {3, 4}, 1200),
 //        Instance({50, 100, 500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
 };
 
@@ -159,6 +160,7 @@ void check4solution(const vector<vector<double>> &vectors, int n, int m, int k, 
     for (int i = 0; i < n; ++i) {
         partition[solution[i]].push_back(i);
     }
+    double objective = numeric_limits<double>::min();
     for (int j = 0; j < m; ++j) {
         vector<double> sums(k, 0);
         for (int s = 0; s < k; ++s) {
@@ -168,11 +170,12 @@ void check4solution(const vector<vector<double>> &vectors, int n, int m, int k, 
         }
         sort(sums.begin(), sums.end());
         double diff = sums.back() - sums[0];
-        if (diff > value + kEPS) {
-            throw runtime_error(join_fields("Max diff on col", j , "is", diff, ", larger than", value));
-        } else if (diff < value - kEPS) {
-            throw runtime_error(join_fields("Max diff on col", j , "is", diff, ", smaller than", value));
-        }
+        objective = std::max(diff, objective);
+    }
+    if (objective > value + kEPS) {
+        throw runtime_error(join_fields("Max diff", "is", objective, ", larger than", value));
+    } else if (objective < value - kEPS) {
+        throw runtime_error(join_fields("Max diff", "is", objective, ", smaller than", value));
     }
     cout << "success" << endl;
 }

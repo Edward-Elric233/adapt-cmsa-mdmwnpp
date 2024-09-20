@@ -1,0 +1,38 @@
+new_local_repository(
+    name = "cplex",
+    path = "/home/edward/packages/CPLEX/cplex",
+    build_file_content = """
+cc_library(
+    name = "cplex_lib",
+    srcs = ["lib/x86-64_linux/static_pic/libcplex.a"],
+    hdrs = glob(["include/**"]),
+    includes = ["include"],
+    linkopts = ["-lpthread", "-lm"],  # Add any additional required linker options
+    visibility = ["//visibility:public"],
+)
+cc_library(
+    name = "ilocplex_lib",
+    srcs = ["lib/x86-64_linux/static_pic/libilocplex.a"],
+    includes = ["include"],
+    linkopts = ["-lpthread", "-lm"],
+    deps = [":cplex_lib"],  # Declare dependency on cplex_lib
+    visibility = ["//visibility:public"],
+)
+""",
+)
+
+new_local_repository(
+    name = "concert",
+    path = "/home/edward/packages/CPLEX/concert",
+    build_file_content = """
+cc_library(
+    name = "concert_lib",
+    srcs = ["lib/x86-64_linux/static_pic/libconcert.a"],
+    hdrs = glob(["include/**"]),
+    includes = ["include"],
+    linkopts = ["-lpthread", "-lm"],
+    deps = ["@cplex//:cplex_lib"],  # Declare dependency on cplex_lib
+    visibility = ["//visibility:public"],
+)
+""",
+)

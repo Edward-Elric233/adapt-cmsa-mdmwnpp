@@ -1,0 +1,43 @@
+cc_binary(
+    name = "mdmwnpp",
+    srcs = ["src/mdmwnpp.cpp", "src/Matrix.h"],  # Include all your source files
+    deps = [
+        ":timer_lib",
+        "@cplex//:cplex_lib",
+        "@cplex//:ilocplex_lib",
+        "@concert//:concert_lib",
+    ],
+    copts = [
+        "-std=c++17",
+        "-m64",
+        "-O3",  # Apply -O3 optimization
+        "-Ofast",            # Aggressive optimizations
+        "-flto",             # Link-Time Optimization
+        "-march=native",     # CPU-specific optimizations
+        "-ffast-math",       # Fast math calculations
+        "-funroll-loops",    # Loop unrolling
+        "-fstrict-aliasing",  # 启用严格别名优化
+        "-fomit-frame-pointer",  # 省略帧指针
+        "-ffast-math",  # 激进的浮点数优化
+        "-fPIC",
+        "-fexceptions",
+        "-DNDEBUG",
+        "-DIL_STD",
+    ],
+    includes = ["src"],
+)
+
+cc_library(
+    name = "timer_lib",
+    srcs = ["src/Timer.cc"],
+    hdrs = ["src/Timer.h", "src/config.h"],
+    copts = [
+        "-std=c++17",
+        "-O3",  # 使用 -O3 编译优化
+        "-m64",
+        "-fPIC",
+        "-fexceptions",
+        "-DNDEBUG",
+        "-DIL_STD",
+    ],
+)
