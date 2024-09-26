@@ -2,6 +2,11 @@
 // Created by edward on 6/15/24.
 //
 
+#include "utils.h"
+#include "Results.h"
+
+#include <boost/program_options.hpp>
+
 #include <cstdio>
 #include <iostream>
 #include <fstream>
@@ -17,8 +22,10 @@
 #include <numeric>
 #include <algorithm>
 
+namespace po = boost::program_options;
 using namespace std;
 
+//TODO: move to utils
 string run_command(string cmd) {
     constexpr int kBufSize = 1024;
     array<char, kBufSize> buffer;
@@ -57,7 +64,9 @@ const unordered_map<string, string> data_file_names = {
 //        {"d", "mdtwnpp_500_20d.txt"},
 //        {"e", "mdtwnpp_500_20e.txt"},
 };
+
 const string results_dir = work_dir + "evaluate/results/";
+const string cur_results_dir = results_dir + "cur/";
 
 struct Instance {
     vector<int> nSet, mSet, kSet;
@@ -67,20 +76,15 @@ struct Instance {
     : nSet(nSet_), mSet(mSet_), kSet(kSet_), t(t_) {}
 };
 
+//TODO: move to config
 const vector<Instance> instances = {
-//        Instance({50}, {2}, {2}, 600),
-        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),
+        Instance({50}, {2}, {2}, 600),
+//        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),
 //        Instance({50, 100}, {2, 3, 4, 5, 10, 15, 20}, {3, 4}, 1200),
-        Instance({50, 100}, {10, 15, 20}, {3, 4}, 1200),
+//        Instance({50, 100}, {10, 15, 20}, {3, 4}, 1200),
 //        Instance({50, 100, 500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
 };
 
-template<typename... Args>
-string join_fields(Args&&... args) {
-    ostringstream oss;
-    ((oss << args << " "), ...);
-    return oss.str();
-}
 
 void run_single_instance() {
     string file_path = data_dir + data_file_names.at("a");
@@ -89,7 +93,7 @@ void run_single_instance() {
     int k = 3;
     int t = 120;
     auto&& param = params.at(n);
-    auto cmd = join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 5,
+    auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 5,
                         "-cmsa_cplex_time", 3, "-cmsa_greedy", 2, "-cmsa_milp", 0, "-n_a", 1, "-alphaLB", param.aLB, "-alphaUB", param.aUB,
                         "-alpha_red", param.aRed, "-t_prop", param.tProp, "-t", t);
     cout << cmd << endl;
@@ -101,7 +105,7 @@ void run_single_instance() {
 void run_instances() {
     for (auto &&[set_name, file_name] : data_file_names) {
         string file_path = data_dir + file_name;
-        const string result_file = results_dir + set_name + ".csv";
+        const string result_file = cur_results_dir + set_name + ".csv";
         {
             ofstream ofs(result_file, ios::app);
             if (!ofs) {
@@ -115,7 +119,7 @@ void run_instances() {
                 for (auto &&m : instance.mSet) {
                     for (auto &&k : instance.kSet) {
                         auto&& param = params.at(n);
-                        auto cmd = join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 5,
+                        auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 5,
                                             "-cmsa_cplex_time", 3, "-cmsa_greedy", 2, "-cmsa_milp", 0, "-n_a", 1, "-alphaLB", param.aLB, "-alphaUB", param.aUB,
                                             "-alpha_red", param.aRed, "-t_prop", param.tProp, "-t", instance.t);
                         cout << cmd << endl;
@@ -153,7 +157,7 @@ auto read_data(const string &data_file_path) {
 void check4solution(const vector<vector<double>> &vectors, int n, int m, int k, double value,
                     const vector<int> &solution) {
     constexpr double kEPS = 1e-3;
-    if (solution.size() != n) {
+    if (static_cast<int>(solution.size()) != n) {
         throw runtime_error("Solution size != n");
     }
     vector<vector<int>> partition(k);
@@ -173,9 +177,9 @@ void check4solution(const vector<vector<double>> &vectors, int n, int m, int k, 
         objective = std::max(diff, objective);
     }
     if (objective > value + kEPS) {
-        throw runtime_error(join_fields("Max diff", "is", objective, ", larger than", value));
+        throw runtime_error(edward::join_fields("Max diff", "is", objective, ", larger than", value));
     } else if (objective < value - kEPS) {
-        throw runtime_error(join_fields("Max diff", "is", objective, ", smaller than", value));
+        throw runtime_error(edward::join_fields("Max diff", "is", objective, ", smaller than", value));
     }
     cout << "success" << endl;
 }
@@ -207,13 +211,13 @@ void check4file(const string& result_file_path, const string& data_file_path) {
         try {
             check4solution(vectors, n, m, k, value, solution);
         } catch (const exception &e) {
-            std::cerr << "Error: " << join_fields(result_file_path, n, m, k, ":", e.what()) << std::endl;
+            std::cerr << "Error: " << edward::join_fields(result_file_path, n, m, k, ":", e.what()) << std::endl;
         }
     }
 }
 
 void check() {  //检查运行结果正确性
-    for (auto&& file_entry : filesystem::directory_iterator(results_dir)) {
+    for (auto&& file_entry : filesystem::directory_iterator(cur_results_dir)) {
         auto&& file_path = file_entry.path();
         if (filesystem::is_regular_file(file_entry.status()) && file_path.extension() == ".csv") {
             //结果文件
@@ -223,11 +227,72 @@ void check() {  //检查运行结果正确性
     }
 }
 
-int main() {
+void store(const string &src_results_dir, const string &dst_results_dir, const string &store_results_dir) {
+    Results srcResults(src_results_dir);
+    cout << "src results\n" << srcResults << endl;
+    Results dstResults(dst_results_dir);
+    cout << "dst results\n" << dstResults << endl;
+    int cnt = dstResults.merge(srcResults);
+    cout << "src has " << cnt << " solutions better than dst" << endl;
+    if (store_results_dir.size() > 0) {
+        try {
+            //remove all csv file
+            for (auto&& file_entry : filesystem::directory_iterator(store_results_dir)) {
+                if (file_entry.is_regular_file() && file_entry.path().extension() == ".csv") {
+                    filesystem::remove(file_entry.path());
+                }
+            }
+
+            dstResults.store(store_results_dir);
+        } catch (const filesystem::filesystem_error& e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+    }
+}
+
+int main(int argc, char* argv[]) {
+    po::options_description desc("Allowed options");
+    desc.add_options()
+            ("help,h", "produce help message")
+            ("run,r", "run all instances declared")
+            ("check,c", "check results availability")
+            ("store,s", po::value<vector<string>>()->multitoken()->zero_tokens(), "store best results to results-best")
+            ("all,a", "-r -c -s");
     try {
-//        run_single_instance();
-        run_instances();
-        check();
+        po::variables_map vm;
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
+
+        if (vm.count("help")) {
+            std::cout << desc << std::endl;
+            return 0;
+        }
+        if (vm.count("run") || vm.count("all")) {
+            run_instances();
+        }
+        if (vm.count("check") || vm.count("all")) {
+            check();
+        }
+        if (vm.count("store") || vm.count("all")) {
+            auto store_options = vm["store"].as<vector<string>>();
+            if (store_options.size() > 3) {
+                std::cerr << "Option 'store' accepts at most 3 arguments.\n";
+                return 0;
+            }
+            string src_results = "cur";
+            string dst_results = "best";
+            string dst_dir; //default is empty
+            if (store_options.size() > 0) {
+                src_results = store_options[0];
+            }
+            if (store_options.size() > 1) {
+                dst_results = store_options[1];
+            }
+            if (store_options.size() > 2) {
+                dst_dir = results_dir + store_options[2] + "/";
+            }
+            store(results_dir + src_results, results_dir + dst_results, dst_dir);
+        }
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }

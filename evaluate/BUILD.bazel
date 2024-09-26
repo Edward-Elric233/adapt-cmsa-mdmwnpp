@@ -2,6 +2,17 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 
 cc_binary(
     name = "eval",
-    srcs = ["src/eval.cpp"],
+    srcs = ["src/eval.cpp", "src/Solution.cpp", "src/Solution.h", "src/SolutionSet.cpp", "src/SolutionSet.h", "src/Results.cpp", "src/Results.h"],
+    deps = [
+        "//:utils_lib",
+        "@boost//:program_options",
+    ],
+    copts = ["-std=c++17"],
+)
+
+cc_library(
+    name = "utils_lib",
+    srcs = ["src/utils.cpp"],
+    hdrs = ["src/utils.h", "src/json.hpp"],
     copts = ["-std=c++17"],
 )
