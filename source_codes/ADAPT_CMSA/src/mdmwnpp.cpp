@@ -185,17 +185,26 @@ void ulazpod(void)
 /* end of reading and stroring in data structures */
 
 
+double max_minus_min(const MatrixColMajor<double>& sum, int l, int k) {
+    double max_v = numeric_limits<double>::min();
+    double min_v = numeric_limits<double>::max();
 
+    for (int j = 0; j < k; ++j) {
+        double t = sum(j, l);
+        if (max_v < t)
+            max_v = t;
+        if (min_v > t)
+            min_v = t;
+    }
+    return max_v - min_v;
 
+}
 
-
-double max_minus_min(const MatrixColMajor<double>& sum, int l)
-{
+double max_minus_min(const MatrixColMajor<double>& sum, int l) {
 	double max_v = numeric_limits<double>::min();
 	double min_v = numeric_limits<double>::max();
 
-	for (int j = 0; j < problem->k; ++j)
-	{
+	for (int j = 0; j < problem->k; ++j) {
         double t = sum(j, l);
 		if (max_v < t)
 			max_v = t;
@@ -206,21 +215,42 @@ double max_minus_min(const MatrixColMajor<double>& sum, int l)
 
 }
 
-
-double objective(vector<int>& solution, int k = -1)
-{
-
-	if (solution.empty())
-		return INF;
-	double value = 0.0;
-	// vector<vector<double>> sum;  // sum[i][dx]: sum of coordinate dx from {0,...,m-1} of vectors in partition i
-    static MatrixColMajor<double> sum(problem->k, problem->m);
+double objective(vector<int>& solution, int k) {
+    if (solution.empty())
+        return INF;
+    double value = 0.0;
+    // vector<vector<double>> sum;  // sum[i][dx]: sum of coordinate dx from {0,...,m-1} of vectors in partition i
+    //TODO: test
+    static MatrixColMajor<double> sum(problem->n, problem->m);  //kval may > problem->k, but < problem->n
     sum.reset();
 
-	int kval = k;
+    for (int j = 0; j < problem->m; ++j) {
+        int index = 0;
+        for (int px : solution) {
+            sum(px, j) += wmat(index, j);
+            index++; // next vector
+        }
+    }
 
-	if (kval == -1) // if alg == 3 (KMeans based); problem->k is replaced to k (allowed number of partitions)
-		kval = problem->k;
+    double obj = numeric_limits<double>::min();
+
+    for (int j = 0; j < problem->m; ++j) // through coordinates:
+    {
+        double maxmin = max_minus_min(sum, j, k);
+        if (obj < maxmin)
+            obj = maxmin;
+    }
+
+    return obj;
+
+}
+
+double objective(vector<int>& solution) {
+	if (solution.empty())
+		return INF;
+	// vector<vector<double>> sum;  // sum[i][dx]: sum of coordinate dx from {0,...,m-1} of vectors in partition i
+    static MatrixColMajor<double> sum(problem->k, problem->m);  //kval may > problem->k, but < problem->n
+    sum.reset();
 
     for (int j = 0; j < problem->m; ++j) {
         int index = 0;
@@ -232,8 +262,8 @@ double objective(vector<int>& solution, int k = -1)
 
 	double obj = numeric_limits<double>::min();
 
-	for (int j = 0; j < problem->m; ++j) // through coordinates:
-	{
+	for (int j = 0; j < problem->m; ++j) {
+        // through coordinates:
 		double maxmin = max_minus_min(sum, j);
 		if (obj < maxmin)
 			obj = maxmin;
@@ -770,27 +800,15 @@ vector<int>  cplex_COAM(set<pair<int, int>>& C_prime, double UB = INF)
 // rearrange the solution according to a partial ordering relation (the smallest idx of vector in partition i is smaller than that of partition j, for i < j).
 void rearrange(vector<int>& solution)
 {
-
-	vector<int> rearrange(problem->n, -1);
+    static vector<int> hash(problem->k);
+    std::fill(hash.begin(), hash.end(), -1);
 	int index = 0; // indexing partitions from 0 to k
-	for (int i = 0; i < problem->n; ++i)
-	{
+	for (int i = 0; i < problem->n; ++i) {
 		int px = solution[i];
-		if (rearrange[i] == -1)
-		{
-			rearrange[i] = index;
-			for (int j = i + 1; j < problem->n; ++j)
-				if (solution[j] == px)
-					rearrange[j] = index;
-
-			index++;
-		}
-	}
-	index = 0;
-	for (auto x : rearrange)
-	{
-		solution[index] = x;
-		index++;
+        if (hash[px] == -1) {
+            hash[px] = index++;
+        }
+        solution[i] = hash[px];
 	}
 }
 
@@ -903,6 +921,7 @@ vector<int> KMeansHeuristic(int num_move = 1)
 //	cout << "Run  KMeans based heuristic ... " << endl;
 	// start with n-partitioning --> each vector in its own partition
 	vector<int> solution;
+    solution.reserve(problem->n);
 
 	for (auto i = 0; i < problem->n; ++i)
 		solution.push_back(i);
@@ -922,9 +941,7 @@ vector<int> KMeansHeuristic(int num_move = 1)
 
 		while (move < num_move)
 		{
-
-			for (auto& x : solution)
-				solution_prime.push_back(x);
+            solution_prime = solution;
 
 			int v1 = rand() % (problem->n - count_merge);
 			int v2 = rand() % (problem->n - count_merge);
@@ -957,7 +974,6 @@ vector<int> KMeansHeuristic(int num_move = 1)
 				move_v1 = v1;
 				move_v2 = v2;
 			}
-			solution_prime.clear();
 			move++;
 		}
 
@@ -980,7 +996,7 @@ vector<int> KMeansHeuristic(int num_move = 1)
 //	for (auto x : solution)
 //		cout << x << " ";
 
-	double obj = objective(solution);
+//	double obj = objective(solution);
 //	cout << " obj : " << obj << endl;
 	// solution rearrangement  neccesary for the CMSA
 	rearrange(solution);
@@ -1058,7 +1074,6 @@ void Adapt(unordered_map<pair<int, int>, int, hash_pair>& Age, set<pair<int, int
 // number of appearances of element x in solution
 int no_appear(vector<int>& solution, int x)
 {
-
 	int counter = 0;
 	for (auto el : solution)
 		if (x == el)
@@ -1538,25 +1553,25 @@ void CMSA()
 
 /** Adapt-CMSA implementation **/
 
-vector<int> ProbabilisticSolutionConstruction(vector<int>& s_bs, double alpha_bsf)
-{
-
+vector<int> ProbabilisticSolutionConstruction(vector<int>& s_bs, double alpha_bsf) {
 	vector<int> s = s_bs;      //   srand(time(NULL));
 	double mutate = 1.0 - alpha_bsf; // probability of mutation
+    static vector<int> cnt(problem->k);
+    std::fill(cnt.begin(), cnt.end(), 0);
+    for (auto x : s) {
+        ++cnt[x];
+    }
 	//cout << "mutate factor " << mutate << endl;
-	for (int i = 0; i < s.size(); ++i)
-	{
-
+	for (int i = 0; i < s.size(); ++i) {
 		double r = ((double)rand() / (RAND_MAX)) + 1;
-		if (r - 1 < mutate) // do mutation
-		{
- 
+		if (r - 1 < mutate) {
+            // do mutation
 			int partition = rand() % problem->k; // which partition idx to choose
-			if (no_appear(s, s[i]) <= 1)
-			{
+			if (cnt[s[i]] <= 1) {
 				continue;
-			}
-			else {
+			} else {
+                --cnt[s[i]];
+                ++cnt[partition];
 				s[i] = partition;
 			}
 
@@ -1809,10 +1824,10 @@ void Adapted_CMSA()
 	double alpha_bsf = alpha_UB;
 
 	/** start the procedure **/
-	if (cmsa_greedy == MDRGHG)
+//    s_bsf = KMeansHeuristic();
+    if (cmsa_greedy == MDRGHG)
 		s_bsf = MDRGH(problem->d);
-	else
-	if (cmsa_greedy == KMEANG)
+	else if (cmsa_greedy == KMEANG)
 	    s_bsf = KMeansHeuristic();
 	else
 	    s_bsf = RandomizedGenerator();
@@ -1844,21 +1859,12 @@ void Adapted_CMSA()
  
 		for (int i = 0; i < n_a_init; ++i) // generate random solutions:
 		{
-
 			vector<pair<int, int>> C_i;
 			vector<int> S;
 			S = ProbabilisticSolutionConstruction(s_bsf, alpha_bsf);
 
 			double S_obj = LSbest(S);
 			rearrange(S);  
-			if (S_obj < obj_best) // update best sol
-			{
-				s_bsf.clear();
-				for (auto x : S) // update s_bsf
-				     s_bsf.push_back(x);
-
-				obj_best = S_obj;
-			}
 
 			// Merge -- a standard way
 			for (int i = 0; i < S.size(); ++i)
@@ -1874,8 +1880,12 @@ void Adapted_CMSA()
 			if (problem->alg == DEEP_CMSAH) //Deep-CMSA
 				C_prime_vector.push_back(C_i);
 
-			S.clear(); C_i.clear();
-		}
+            if (S_obj < obj_best) {
+                // update best sol
+                s_bsf.swap(S);
+                obj_best = S_obj;
+            }
+        }
 		// solve subinstance:
 		double start_time_subinstance = timer.elapsed_time(Timer::VIRTUAL);
 
@@ -1891,7 +1901,7 @@ void Adapted_CMSA()
 		S_opt_prime_obj = INF;
 		if (!S_opt_prime.empty()) // if not the empty solution
 		{
-			S_opt_prime_obj = objective(S_opt_prime);
+//			S_opt_prime_obj = objective(S_opt_prime);
 			//if (true  || S_opt_prime_obj >= 0.8 * obj_best)
 			//{
 			ls_iter_impr++;
@@ -2068,7 +2078,7 @@ void read_parameters(int argc, char** argv) {
 		else if (strcmp(argv[iarg], "-age_max") == 0)  age_max = atoi(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-cmsa_cplex_time") == 0)  cmsa_cplex_time = atof(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-cmsa_milp") == 0)  cmsa_milp = atoi(argv[++iarg]);
-		else if (strcmp(argv[iarg], "-cmsa_greedy") == 0)  cmsa_greedy = atoi(argv[++iarg]) + 2;
+		else if (strcmp(argv[iarg], "-cmsa_greedy") == 0)  cmsa_greedy = atoi(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-alphaLB") == 0)  alpha_LB = atof(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-alphaUB") == 0)  alpha_UB = atof(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-alpha_red") == 0)  alpha_red = atof(argv[++iarg]);

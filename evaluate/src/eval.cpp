@@ -82,6 +82,7 @@ const vector<Instance> instances = {
 //        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),
 //        Instance({50, 100}, {2, 3, 4, 5, 10, 15, 20}, {3, 4}, 1200),
 //        Instance({50, 100}, {10, 15, 20}, {3, 4}, 1200),
+//        Instance({50, 100}, {2, 3, 4, 5}, {3, 4}, 1200),
 //        Instance({50, 100, 500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
 };
 
@@ -229,9 +230,9 @@ void check() {  //检查运行结果正确性
 
 void store(const string &src_results_dir, const string &dst_results_dir, const string &store_results_dir) {
     Results srcResults(src_results_dir);
-    cout << "src results\n" << srcResults << endl;
+//    cout << "src results\n" << srcResults << endl;
     Results dstResults(dst_results_dir);
-    cout << "dst results\n" << dstResults << endl;
+//    cout << "dst results\n" << dstResults << endl;
     int cnt = dstResults.merge(srcResults);
     cout << "src has " << cnt << " solutions better than dst" << endl;
     if (store_results_dir.size() > 0) {
@@ -268,13 +269,17 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         if (vm.count("run") || vm.count("all")) {
+            //TODO: check cur dir
             run_instances();
         }
         if (vm.count("check") || vm.count("all")) {
             check();
         }
         if (vm.count("store") || vm.count("all")) {
-            auto store_options = vm["store"].as<vector<string>>();
+            vector<string> store_options;
+            if (vm.count("store")) {
+                store_options = vm["store"].as<vector<string>>();
+            }
             if (store_options.size() > 3) {
                 std::cerr << "Option 'store' accepts at most 3 arguments.\n";
                 return 0;
