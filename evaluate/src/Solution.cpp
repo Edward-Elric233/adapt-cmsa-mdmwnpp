@@ -13,7 +13,7 @@ bool SolutionParam::operator== (const SolutionParam& other) const {
     return n_ == other.n_ && m_ == other.m_ && k_ == other.k_;
 }
 bool SolutionParam::operator< (const SolutionParam& other) const {
-    return n_ < other.n_ || (n_ == other.n_ && m_ < other.m_) || (n_ == other.n_ && m_ == other.m_ && k_ < other.k_);
+    return k_ < other.k_ || (k_ == other.k_ && n_ < other.n_) || (k_ == other.k_ && n_ == other.n_ && m_ < other.m_);
 }
 
 
