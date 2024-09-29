@@ -1,6 +1,6 @@
 cc_binary(
     name = "mdmwnpp",
-    srcs = ["src/mdmwnpp.cpp", "src/Matrix.h"],  # Include all your source files
+    srcs = ["src/mdmwnpp.cpp", "src/Matrix.h", "src/utils.h", "src/utils.cpp", "src/json.hpp"],  # Include all your source files
     deps = [
         ":timer_lib",
         "@cplex//:cplex_lib",

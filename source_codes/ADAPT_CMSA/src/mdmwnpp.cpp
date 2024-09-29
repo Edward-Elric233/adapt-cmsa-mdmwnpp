@@ -2,6 +2,7 @@
 #include <config.h>
 #endif
 #include "Timer.h"
+#include "utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -25,8 +26,8 @@
 #endif
 
 #define wmat(i,j) problem->w[(i)*problem->m + j]
-#define INF 1000000000000000.0 
-#define MAXS 100
+constexpr double INF = 1000000000000000.0;
+constexpr int MAXS = 100;
 
 #include "Matrix.h"
 
@@ -830,11 +831,10 @@ vector<int>  MDRGH(int d)
 	}
 
 	vector<int> D; // store random dymensions utilized to guide search 
-	//srand(time(NULL));
 
 	for (int dx = 0; dx < d; ++dx)
 	{
-		int dim = (rand() % problem->m); // rand 
+        int dim = edward::Random::rand(problem->m); // rand
 
 		if (std::find(D.begin(), D.end(), dim) == D.end())
 			D.push_back(dim);
@@ -891,10 +891,10 @@ vector<int> RandomizedGenerator()
 	int kx = 0;
 	while (kx < problem->k) // ensure feasibility 
 	{
-		int k = rand() % problem->n;
-		while (solution[k] != -1)
+        int k = edward::Random::rand(problem->n);
+        while (solution[k] != -1)
 		{
-			k = rand() % problem->n;
+			k = edward::Random::rand(problem->n);
 //			cout << "k: " << k << endl;
 		}
 		solution[k] = kx;
@@ -905,9 +905,8 @@ vector<int> RandomizedGenerator()
 	{
 		if (solution[i] == -1)
 		{
-
-			int part_r = rand() % problem->k;
-			solution[i] = part_r;
+            int part_r = edward::Random::rand(problem->k);
+            solution[i] = part_r;
 		}
 	}
  
@@ -943,11 +942,11 @@ vector<int> KMeansHeuristic(int num_move = 1)
 		{
             solution_prime = solution;
 
-			int v1 = rand() % (problem->n - count_merge);
-			int v2 = rand() % (problem->n - count_merge);
+			int v1 = edward::Random::rand(problem->n - count_merge);
+			int v2 = edward::Random::rand(problem->n - count_merge);
 
 			while (v2 == v1)
-				v2 = rand() % (problem->n - count_merge);
+				v2 = edward::Random::rand(problem->n - count_merge);
 			// v1 and v2 are different ==> merge partitioning v2 and v1 
 			if (v1 > v2)  // make sure that v2 is always bigger than v1 
 			{
@@ -1212,15 +1211,15 @@ double LSfirst(vector<int>& sol)
 	while (impr) {
 		impr = 0;
 		// LS1
-		int i_r = rand() % problem->n;
+		int i_r = edward::Random::rand(problem->n);
 		for (int ix = 0; ix < nx; ix++) {
 			int i = (i_r + ix) % problem->n; // to avoid positional bias
 			int p = sol[i];
 			int oldp = sol[i];
-			int p_r = rand() % k;
+			int p_r = edward::Random::rand(k);
 			for (int px = 0; px < k; px++) {
 				//do {
-				//	p = rand() % k;
+				//	p = r_and() % k;
 				//} while (p == sol[i]);
 				p = (px + p_r) % k;
 				if (p == sol[i])
@@ -1250,10 +1249,10 @@ double LSfirst(vector<int>& sol)
 		if (impr)
 			continue;
 		// LS2
-		int ir = rand() % problem->n;
+		int ir = edward::Random::rand(problem->n);
 		for (int ix = 0; ix < nx; ix++) {
 			int i = (ir + ix) % problem->n; // to avoid positional bias
-			int jr = rand() % problem->n;
+			int jr = edward::Random::rand(problem->n);
 
 			for (int jx = 0; jx < nx; jx++) {
 				int j = (jr + jx) % problem->n;
@@ -1554,7 +1553,7 @@ void CMSA()
 /** Adapt-CMSA implementation **/
 
 vector<int> ProbabilisticSolutionConstruction(vector<int>& s_bs, double alpha_bsf) {
-	vector<int> s = s_bs;      //   srand(time(NULL));
+	vector<int> s = s_bs;
 	double mutate = 1.0 - alpha_bsf; // probability of mutation
     static vector<int> cnt(problem->k);
     std::fill(cnt.begin(), cnt.end(), 0);
@@ -1563,10 +1562,10 @@ vector<int> ProbabilisticSolutionConstruction(vector<int>& s_bs, double alpha_bs
     }
 	//cout << "mutate factor " << mutate << endl;
 	for (int i = 0; i < s.size(); ++i) {
-		double r = ((double)rand() / (RAND_MAX)) + 1;
-		if (r - 1 < mutate) {
+		double r = ((double)edward::Random::rand(edward::INF) / edward::INF);
+		if (r< mutate) {
             // do mutation
-			int partition = rand() % problem->k; // which partition idx to choose
+			int partition = edward::Random::rand(problem->k); // which partition idx to choose
 			if (cnt[s[i]] <= 1) {
 				continue;
 			} else {
@@ -1586,7 +1585,7 @@ vector<int> ProbabilisticSolutionConstruction(vector<int>& s_bs, double alpha_bs
 vector<int> ProbabilisticSolutionConstructionSwapBased(vector<int>& s_bs, double alpha_bsf)
 {
 
-	vector<int> s = s_bs;      //   srand(time(NULL));
+	vector<int> s = s_bs;
 	double mutate = 1.0 - alpha_bsf; // probability of mutation
  
 	for (int i = 0; i < s.size() - 1; ++i)
@@ -1594,8 +1593,8 @@ vector<int> ProbabilisticSolutionConstructionSwapBased(vector<int>& s_bs, double
 		for (int j = i + 1; j < s.size(); ++j)
 		{
 
-			double r = ((double)rand() / (RAND_MAX)) + 1;
-			if (r - 1 < mutate) // do mutation
+            double r = ((double)edward::Random::rand(edward::INF) / edward::INF);
+            if (r < mutate) // do mutation
 			{
 				int part1 = s[i];
 				int part2 = s[j];
@@ -2021,7 +2020,7 @@ pair<double, vector<int>> random_solution() {
 	pair<double, vector<int>> sol;
 	sol.second = vector<int>(problem->n);
 	for (int j = 0; j < problem->n; j++)
-		sol.second[j] = rand() % problem->k;
+		sol.second[j] = edward::Random::rand(problem->k);
 	rearrange(sol.second);
 	sol.first = objective(sol.second);
 	return sol;
@@ -2037,7 +2036,7 @@ pair<double, vector<int>> select_tournament(vector<pair<double, vector<int>>> po
 #endif
 	double best_i = -1;
 	for (int i = 0; i < t_size; i++) {
-		int ri = rand() % pop.size();
+		int ri = edward::Random::rand(pop.size());
 		if (pop[ri].first < best) {
 			best = pop[ri].first;
 			best_i = ri;
@@ -2106,7 +2105,7 @@ int main(int argc, char** argv)
     std::ios::sync_with_stdio(false);   //关闭和stdio同步
     cin.tie(nullptr);   //解除cin和cout绑定刷新
 
-	srand(seed); //time(NULL));
+    edward::Random::setFixedSeed(seed);
 	std::cout << std::setprecision(4) << std::fixed;
 	cur_time = timer.elapsed_time(Timer::VIRTUAL);
 	read_parameters(argc, argv);
