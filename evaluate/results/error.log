@@ -1,3 +1,113 @@
+# Analyse
+
+## "Advanced basis not built" 错误
+这个错误信息通常与线性规划 (LP) 或混合整数规划 (MIP) 问题的基 (basis) 相关。在 CPLEX 中，解法过程中使用了基的概念，特别是在求解线性规划的单纯形算法中。"Advanced basis not built" 的错误可能意味着：
+
+CPLEX 期望利用某种高级基 (advanced basis) 来加速求解，但当前模型不支持这种基。
+这可能是因为模型的特定结构或者模型在初始化时没有足够的信息来构建这种高级基。
+在一般情况下，这个错误不一定会影响模型的求解，可能是求解器的一个警告，而不是致命错误。
+
+## `"Using size restricted mode (Could not find directory for cpxchecklic)"`
+这条消息表明 IBM CPLEX 求解器进入了**受限模式**（size restricted mode），并且无法找到用于检查许可证的工具或路径 `cpxchecklic`。
+
+### 受限模式的含义
+
+**受限模式**（size restricted mode）意味着 CPLEX 在没有有效许可证的情况下运行，通常会施加以下限制：
+1. **问题规模限制**：受限模式下，求解问题的规模（变量数、约束数等）将受到限制，超出限制的求解无法进行。这可能会直接影响程序的功能，特别是在求解较大规模问题时。
+2. **功能限制**：一些高级功能可能不可用，比如多线程求解或启发式算法等。
+
+### 原因分析
+
+这条消息中的 `"Could not find directory for cpxchecklic"` 提示 CPLEX 无法找到用于检查许可证的工具 `cpxchecklic`，这通常意味着 CPLEX 未能正确找到或加载许可证文件。可能的原因包括：
+1. **许可证文件缺失或路径不正确**：CPLEX 需要正确的许可证文件来解除受限模式。如果许可证文件缺失、损坏或配置错误，求解器会进入受限模式。
+2. **环境变量未设置**：CPLEX 依赖环境变量（如 `ILOG_LICENSE_FILE` 或 `CPLEX_LICENSE`) 来定位许可证文件。如果这些环境变量未正确设置，CPLEX 将无法找到许可证文件。
+3. **许可证过期**：如果许可证已过期或无效，CPLEX 也会进入受限模式。
+4. **许可证工具（`cpxchecklic`）未安装或配置不正确**：`cpxchecklic` 是用于检查和验证许可证的工具，通常随 CPLEX 的安装一起提供。如果该工具没有正确安装或无法找到，CPLEX 会尝试运行但无法验证许可证，从而进入受限模式。
+
+### 解决方案
+
+1. **检查许可证文件**：
+   - 确认你拥有有效的 CPLEX 许可证文件。许可证文件通常是 `.ilm` 或 `.dat` 格式，确保文件未损坏，并且路径正确。
+   - 如果你使用的是试用版许可证，请确认它仍然在有效期内。
+
+2. **设置环境变量**：
+   - CPLEX 需要通过环境变量找到许可证文件。你可以检查并设置 `ILOG_LICENSE_FILE` 或 `CPLEX_LICENSE` 环境变量，指向你的许可证文件路径。
+
+   在 Linux/Unix 中，你可以通过以下命令设置：
+   ```bash
+   export ILOG_LICENSE_FILE=/path/to/your/license/file
+   ```
+
+   在 Windows 中，可以通过系统设置中的“环境变量”来设置 `ILOG_LICENSE_FILE`。
+
+3. **检查 `cpxchecklic` 工具**：
+   - 确保 `cpxchecklic` 工具已安装并且可执行。该工具通常随 CPLEX 安装包一起提供，路径应包含在 `PATH` 环境变量中。如果未找到该工具，请确保完整安装了 CPLEX。
+
+4. **联系 IBM 支持**：
+   - 如果你确信许可证文件存在且有效，但仍然无法解决问题，可以联系 IBM 支持团队，提供详细的错误日志和安装信息，寻求进一步的帮助。
+
+### 总结
+
+`"Using size restricted mode (Could not find directory for cpxchecklic)"` 表明 CPLEX 无法找到许可证文件，导致求解器进入了受限模式，限制了问题规模和功能。你需要检查许可证文件和相关环境变量的配置，确保 CPLEX 能正确加载许可证。
+
+# Log
 /home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 50 -m 20 -k 20 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.518 -alphaUB 0.898 -alpha_red 0.093 -t_prop 0.557 -t 1800
 Using size restricted mode (Could not find directory for cpxchecklic).
 terminate called after throwing an instance of 'IloCplex::Exception'
+
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 100 -m 20 -k 10 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.961 -alpha_red 0.049 -t_prop 0.264 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 100 -m 20 -k 20 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.961 -alpha_red 0.049 -t_prop 0.264 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 2 -k 5 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 2 -k 10 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 2 -k 20 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 5 -k 5 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 5 -k 10 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 5 -k 20 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 10 -k 5 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 10 -k 10 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 10 -k 20 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 20 -k 5 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 20 -k 10 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted
+/home/edward/code/cpp/adapt-cmsa-mdmwnpp/source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp -f /home/edward/code/cpp/adapt-cmsa-mdmwnpp/instances/mdtwnpp_500_20a.txt -n 500 -m 20 -k 20 -alg 5 -cmsa_cplex_time 3 -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.302 -alphaUB 0.948 -alpha_red 0.239 -t_prop 0.069 -t 1800
+Using size restricted mode (Could not find directory for cpxchecklic).
+terminate called after throwing an instance of 'IloCplex::Exception'
+Aborted

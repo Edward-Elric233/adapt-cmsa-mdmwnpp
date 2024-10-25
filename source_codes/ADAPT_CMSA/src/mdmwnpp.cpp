@@ -1914,11 +1914,8 @@ void Adapted_CMSA()
 		if (t_solve < t_prop * cmsa_cplex_time and alpha_bsf > alpha_LB)
 			alpha_bsf -= alpha_red;
 
-		if (!S_opt_prime.empty() and S_opt_prime_obj < obj_best)
-		{
-			s_bsf.clear();
-			for (auto x : S_opt_prime) // update s_bsf
-				s_bsf.push_back(x);
+		if (!S_opt_prime.empty() and S_opt_prime_obj < obj_best) {
+            s_bsf = S_opt_prime;
 
 			obj_best = S_opt_prime_obj;
 			n_a_init = n_a;
@@ -2105,7 +2102,7 @@ int main(int argc, char** argv)
     std::ios::sync_with_stdio(false);   //关闭和stdio同步
     cin.tie(nullptr);   //解除cin和cout绑定刷新
 
-    edward::Random::setFixedSeed(seed);
+//    edward::Random::setFixedSeed(seed);
 	std::cout << std::setprecision(4) << std::fixed;
 	cur_time = timer.elapsed_time(Timer::VIRTUAL);
 	read_parameters(argc, argv);

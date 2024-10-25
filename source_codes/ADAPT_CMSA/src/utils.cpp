@@ -7,6 +7,6 @@
 
 namespace edward {
 
-    std::mt19937 Random::pseudoRandNumGen(std::chrono::system_clock::now().time_since_epoch().count()); //默认使用当下时间戳初始化随机数种子，精确到纳秒
+     Random::random_engine_type Random::pseudoRandNumGen(std::chrono::system_clock::now().time_since_epoch().count()); //默认使用当下时间戳初始化随机数种子，精确到纳秒
 
 }

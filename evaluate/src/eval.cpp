@@ -58,8 +58,8 @@ const string work_dir = "/home/edward/code/cpp/adapt-cmsa-mdmwnpp/";
 const string bin_path = work_dir + "source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp";
 const string data_dir = work_dir + "instances/";
 const unordered_map<string, string> data_file_names = {
-        {"a", "mdtwnpp_500_20a.txt"},
-//        {"b", "mdtwnpp_500_20b.txt"},
+//        {"a", "mdtwnpp_500_20a.txt"},
+        {"b", "mdtwnpp_500_20b.txt"},
 //        {"c", "mdtwnpp_500_20c.txt"},
 //        {"d", "mdtwnpp_500_20d.txt"},
 //        {"e", "mdtwnpp_500_20e.txt"},
@@ -80,28 +80,25 @@ struct Instance {
 const vector<Instance> instances = {
 //        Instance({50}, {2}, {2}, 600),
 
-
-        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),   //2h
+//        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),   //2h
 
 
 //        Instance({50, 100}, {2, 3, 4, 5, 10, 15, 20}, {3, 4}, 1200),
-//        Instance({50, 100}, {10, 15, 20}, {3, 4}, 1200),
-//        Instance({50, 100}, {2, 3, 4, 5}, {3, 4}, 1200),      //5.3h
+//        Instance({50, 100}, {10, 15, 20}, {3, 4}, 1200),    //4h
+//        Instance({50, 100}, {4, 5}, {3, 4}, 1200),      //2.65h
+//        Instance({50, 100}, {2, 3}, {3, 4}, 1200),      //2.65h
 
 
 //        Instance({50, 100, 500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
-        Instance({50}, {2, 5, 10, 20}, {5, 10, 20}, 1800),      //6h
-//        Instance({100}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
-//        Instance({500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
+//        Instance({50}, {2, 5, 10, 20}, {5, 10, 20}, 1800),      //6h
+//        Instance({100}, {2, 5}, {5, 10, 20}, 1800),             //3h
+        Instance({100}, {10, 20}, {5, 10, 20}, 1800),           //3h
+        Instance({500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),     //6h
 };
 
 
-void run_single_instance() {
-    string file_path = data_dir + data_file_names.at("a");
-    int n = 50;
-    int m = 4;
-    int k = 3;
-    int t = 120;
+void run_single_instance(const string& set_name, int n, int m, int k, int t) {
+    string file_path = data_dir + data_file_names.at(set_name);
     auto&& param = params.at(n);
     auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 5,
                         "-cmsa_cplex_time", 3, "-cmsa_greedy", 2, "-cmsa_milp", 0, "-n_a", 1, "-alphaLB", param.aLB, "-alphaUB", param.aUB,
@@ -267,6 +264,7 @@ int main(int argc, char* argv[]) {
             ("run,r", "run all instances declared")
             ("check,c", "check results availability")
             ("store,s", po::value<vector<string>>()->multitoken()->zero_tokens(), "store best results to results-best")
+            ("single,rs", po::value<vector<string>>()->multitoken(), "run single instance")
             ("all,a", "-r -c -s");
     try {
         po::variables_map vm;
@@ -306,6 +304,14 @@ int main(int argc, char* argv[]) {
                 dst_dir = results_dir + store_options[2] + "/";
             }
             store(results_dir + src_results, results_dir + dst_results, dst_dir);
+        }
+        if (vm.count("single")) {
+            auto run_params = vm["single"].as<vector<string>>();
+            if (run_params.size() != 5) {
+                std::cerr << "Option 'single' accepts 5 arguments: set_name n m k t.\n";
+                return 0;
+            }
+            run_single_instance(run_params[0], stoi(run_params[1]), stoi(run_params[2]), stoi(run_params[3]), stoi(run_params[4]));
         }
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
