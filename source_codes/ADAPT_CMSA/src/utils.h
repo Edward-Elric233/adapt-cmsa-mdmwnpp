@@ -58,7 +58,8 @@ namespace edward {
     class Random {
     public:
         // random number generator.
-        using random_engine_type = std::minstd_rand;
+//        using random_engine_type = std::minstd_rand;
+        using random_engine_type = std::mt19937;
         static random_engine_type  pseudoRandNumGen;
         static void initRand(int seed) { pseudoRandNumGen = random_engine_type(seed); }   //设置随机数种子
         static int fastRand(int lb, int ub) { return (pseudoRandNumGen() % (ub - lb)) + lb; }

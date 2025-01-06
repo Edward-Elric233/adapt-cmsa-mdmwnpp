@@ -59,10 +59,10 @@ const string bin_path = work_dir + "source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp";
 const string data_dir = work_dir + "instances/";
 const unordered_map<string, string> data_file_names = {
 //        {"a", "mdtwnpp_500_20a.txt"},
-        {"b", "mdtwnpp_500_20b.txt"},
+//        {"b", "mdtwnpp_500_20b.txt"},
 //        {"c", "mdtwnpp_500_20c.txt"},
 //        {"d", "mdtwnpp_500_20d.txt"},
-//        {"e", "mdtwnpp_500_20e.txt"},
+        {"e", "mdtwnpp_500_20e.txt"},
 };
 
 const string results_dir = work_dir + "evaluate/results/";
@@ -86,14 +86,14 @@ const vector<Instance> instances = {
 //        Instance({50, 100}, {2, 3, 4, 5, 10, 15, 20}, {3, 4}, 1200),
 //        Instance({50, 100}, {10, 15, 20}, {3, 4}, 1200),    //4h
 //        Instance({50, 100}, {4, 5}, {3, 4}, 1200),      //2.65h
-//        Instance({50, 100}, {2, 3}, {3, 4}, 1200),      //2.65h
+        Instance({50, 100}, {2, 3}, {3, 4}, 1200),      //2.65h
 
 
 //        Instance({50, 100, 500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
-//        Instance({50}, {2, 5, 10, 20}, {5, 10, 20}, 1800),      //6h
-//        Instance({100}, {2, 5}, {5, 10, 20}, 1800),             //3h
-        Instance({100}, {10, 20}, {5, 10, 20}, 1800),           //3h
-        Instance({500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),     //6h
+        Instance({50}, {2, 5, 10, 20}, {5, 10, 20}, 1800),      //6h
+        Instance({100}, {2, 5}, {5, 10, 20}, 1800),             //3h
+//        Instance({100}, {10, 20}, {5, 10, 20}, 1800),           //3h
+//        Instance({500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),     //6h
 };
 
 
