@@ -15,6 +15,7 @@
 #include <algorithm>    // std::shuffle
 #include <random>       // std::default_random_engine
 #include <chrono>       // std::chrono::system_clock
+#include <cmath>
 #ifdef _WIN32
 #include "ilcplex/ilocplex.h"
 #include <string>
@@ -28,6 +29,7 @@
 #define wmat(i,j) problem->w[(i)*problem->m + j]
 constexpr double INF = 1000000000000000.0;
 constexpr int MAXS = 100;
+constexpr double EPISILON = 0.001;
 
 #include "Matrix.h"
 
@@ -77,6 +79,10 @@ double alpha_LB = 0.35;
 double alpha_UB = 0.97;
 double alpha_red = 0.05;
 double t_prop = 0.13;
+double T_max = 2.0;
+double T_min = 0.2;
+double beta1 = 2.0; //void conflict with the standard library beta function in c++/11/bits/specfun.h
+
 double ls_number = 2; // how many different LS is used
 double prefer_s_bsf = 1;
 
@@ -101,7 +107,8 @@ enum HEURISTICS
 
 	CMSAH = 4,
 	ADAPT_CMSAH = 5,
-	DEEP_CMSAH = 6
+	DEEP_CMSAH = 6,
+    ADAPT_CMSAH_SA = 7
 };
 
 enum GREEDY
@@ -1466,6 +1473,220 @@ double LSbest(vector<int>& sol)
 	return fit;
 }
 
+double LSbest_SA(vector<int>& sol, double temperature)
+{
+    int n = problem->n;
+    int k = problem->k;
+//	double fit = objective(sol);
+    static MatrixColMajor<double> p_sum(k, problem->m);
+    p_sum.reset();
+
+    for (int j = 0; j < problem->m; j++) {
+        for (int i = 0; i < problem->n; i++) {
+            p_sum(sol[i], j) += wmat(i, j);
+        }
+    }
+
+    double fit = numeric_limits<double>::min();
+    for (int j = 0; j < problem->m; ++j) {
+        double minx = numeric_limits<double>::max();
+        double maxx = numeric_limits<double>::min();
+        for (int i = 0; i < k; ++i) {
+            double t = p_sum(i, j);
+            minx = std::min(minx, t);
+            maxx = std::max(maxx, t);
+        }
+        fit = std::max(fit, maxx - minx);
+    }
+
+    // pre-processing counter of elements appearances
+    static vector<int> maps_count(k, 0);
+    std::fill(maps_count.begin(), maps_count.end(), 0);
+    for (auto x: sol) {
+        ++maps_count[x];
+    }
+
+    int impr = 1;
+    while (impr) {
+        impr = 0;
+        // LS1 best
+        int best_i = -1;
+        int best_p = -1;
+        double best_fit = fit;
+        // preprocessing
+
+        for (int i = 0; i < n; i++) {
+            if (maps_count[sol[i]] == 1)
+                continue;
+            for (int p = 0; p < k; p++) {
+                if (p == sol[i])
+                    continue;
+
+                double new_fit = move_fit(sol, i, p, p_sum);
+
+                // simulated annealing
+                bool flag = false;
+                if (new_fit < best_fit - EPISILON) {
+                    flag = true;
+                } else {
+                    double delta = best_fit - new_fit; //-delta
+                    double prob = std::log(delta / temperature);
+                    double r = ((double)edward::Random::rand(edward::INF) / edward::INF);
+                    if (r < prob) {
+                        flag = true;
+                    }
+                }
+                if (flag) {
+                    best_i = i;
+                    best_p = p;
+                    best_fit = new_fit;
+                    impr = 1;
+                }
+            }
+        }
+        if (impr) {
+
+            // update counter
+            maps_count[sol[best_i]]--;
+            maps_count[best_p]++;
+
+            for (int j = 0; j < problem->m; j++) {
+                p_sum(sol[best_i], j) -= wmat(best_i, j);
+                p_sum(best_p, j) += wmat(best_i, j);
+            }
+
+            sol[best_i] = best_p;
+            fit = best_fit;
+            impr = 1;
+            //double control_fit = objective(sol, k);
+            //if (fabs(control_fit - fit) >1)
+            //    cout << "LS1 Incorrect partial fitness function." << to_string(control_fit) << " vs " << to_string(fit) << endl;
+            //cout << "LS1 " << to_string(fit) << endl;
+            continue;
+        }
+        // LS2 (no need to update mpas_counter, 1-swap)
+        if (ls_number >= 2)
+        {
+            best_i = -1;
+            int best_j = -1;
+            best_fit = fit;
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < i; j++) {
+                    if (sol[i] == sol[j])
+                        continue;
+                    double new_fit = swap_fit(sol, i, j, p_sum);
+                    // simulated annealing
+                    bool flag = false;
+                    if (new_fit < best_fit - 0.1) {
+                        flag = true;
+                    } else {
+                        double delta = best_fit - new_fit; //-delta
+                        double prob = std::log(delta / temperature);
+                        double r = ((double)edward::Random::rand(edward::INF) / edward::INF);
+                        if (r < prob) {
+                            flag = true;
+                        }
+                    }
+                    if (flag) {
+                        best_fit = new_fit;
+                        best_i = i;
+                        best_j = j;
+                        impr = 1;
+                    }
+                }
+            }
+            if (impr) {
+                for (int s = 0; s < problem->m; s++) {
+                    double diff = wmat(best_i, s) - wmat(best_j, s);
+                    p_sum(sol[best_i], s) -= diff;
+                    p_sum(sol[best_j], s) += diff;
+                }
+                int pi = sol[best_i];
+                sol[best_i] = sol[best_j];
+                sol[best_j] = pi;
+                fit = best_fit;
+                impr = 1;
+                //double control_fit = objective(sol);
+                //if (fabs(control_fit - fit) > 1)
+                //	cout << "LS2a Incorrect partial fitness function." << to_string(control_fit) << " vs " << to_string(fit) << endl;
+                //cout << "LS2a " << to_string(fit) << endl;
+                continue;
+            }
+        }
+        // LS3 find (i, j, q) and interchange their parts
+        if (ls_number >= 3)
+        {
+            int best_i = -1;
+            int best_j = -1;
+            int best_q = -1;
+            best_fit = fit;
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (sol[i] == sol[j])
+                        continue;
+                    for (int q = 0; q < n; q++) {
+                        if (sol[q] == sol[i] || sol[q] == sol[j])
+                            continue;
+                        // when k=2 this search does not make sense -- because the next command is never achieved.
+                        double new_fit = swap_fit3(sol, i, j, q, p_sum);
+                        // simulated annealing
+                        bool flag = false;
+                        if (new_fit < best_fit - 0.1) {
+                            flag = true;
+                        } else {
+                            double delta = best_fit - new_fit; //-delta
+                            double prob = std::log(delta / temperature);
+                            double r = ((double)edward::Random::rand(edward::INF) / edward::INF);
+                            if (r < prob) {
+                                flag = true;
+                            }
+                        }
+                        if (flag) {
+                            best_fit = new_fit;
+                            best_i = i;
+                            best_j = j;
+                            best_q = q;
+                            impr = 1;
+                        }
+                    }
+                }
+            }
+            if (impr) {
+                // i gets what j has
+                // j gets what q has
+                // q gets what i has (no changes in maps_count structure)
+                for (int s = 0; s < problem->m; s++) {
+
+                    p_sum(sol[best_i], s) -= wmat(best_i, s);
+                    p_sum(sol[best_j], s) -= wmat(best_j, s);
+                    p_sum(sol[best_q], s) -= wmat(best_q, s);
+                    p_sum(sol[best_j], s) += wmat(best_i, s);
+                    p_sum(sol[best_q], s) += wmat(best_j, s);
+                    p_sum(sol[best_i], s) += wmat(best_q, s);
+                }
+                int pi = sol[best_i];
+                sol[best_i] = sol[best_j];
+                sol[best_j] = sol[best_q];
+                sol[best_q] = pi;
+                fit = best_fit;
+                impr = 1;
+//              double control_fit = objective(sol);  // test
+//				if (fabs(control_fit - fit) > 1)
+//					cout << "LS3 Incorrect partial fitness function " << to_string(control_fit) << " vs " << to_string(fit) << endl;
+                //cout << "LS3 " << to_string(fit) << endl;
+                continue;
+            }
+        }
+    }
+
+
+    // due to small error accumulation in LS2 we just recalculate objective using standard full objective function
+    //TODO: 是否可以取消?
+    fit = objective(sol);
+
+    return fit;
+}
+
 /** End of LS from GA **/
 
   
@@ -1821,6 +2042,8 @@ vector<int> Adapted_CMSA()
 
 	int n_a_init = n_a; // n_a initialized from a command line  (n_a = 1, in the case of the original version of AdaptCMSA)
 	double alpha_bsf = alpha_UB;
+    double alpha_delta = alpha_UB - alpha_LB;
+    double temperature = T_min;   //associated with alpha_bsf
 
 	/** start the procedure **/
 //    s_bsf = KMeansHeuristic();
@@ -1862,7 +2085,7 @@ vector<int> Adapted_CMSA()
 			vector<int> S;
 			S = ProbabilisticSolutionConstruction(s_bsf, alpha_bsf);
 
-			double S_obj = LSbest(S);
+			double S_obj = problem->alg == ADAPT_CMSAH_SA ? LSbest_SA(S, temperature) : LSbest(S);
 			rearrange(S);  
 
 			// Merge -- a standard way
@@ -1904,7 +2127,8 @@ vector<int> Adapted_CMSA()
 			//if (true  || S_opt_prime_obj >= 0.8 * obj_best)
 			//{
 			ls_iter_impr++;
-			S_opt_prime_obj = LSbest(S_opt_prime); // possibly improve
+			S_opt_prime_obj = problem->alg == ADAPT_CMSAH_SA ? LSbest_SA(S_opt_prime, temperature) : LSbest(S_opt_prime); // possibly improve
+
 			rearrange(S_opt_prime);
 		}
 
@@ -1938,6 +2162,10 @@ vector<int> Adapted_CMSA()
 				n_a_init++;
 
 		}
+
+        // update temperature
+        temperature = T_min + (T_max - T_min) * pow((alpha_UB - alpha_bsf) / alpha_delta, beta1);
+
 		C_prime.clear();
 
 		if (problem->alg == DEEP_CMSAH)
@@ -2036,7 +2264,10 @@ void read_parameters(int argc, char** argv) {
 		else if (strcmp(argv[iarg], "-alphaUB") == 0)  alpha_UB = atof(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-alpha_red") == 0)  alpha_red = atof(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-t_prop") == 0)   t_prop = atof(argv[++iarg]);
-		else if (strcmp(argv[iarg], "-seed") == 0)   seed = atoi(argv[++iarg]);
+        else if (strcmp(argv[iarg], "-T_max") == 0)   T_max = atof(argv[++iarg]);
+        else if (strcmp(argv[iarg], "-T_min") == 0)   T_min = atof(argv[++iarg]);
+        else if (strcmp(argv[iarg], "-beta") == 0)   beta1 = atof(argv[++iarg]);
+        else if (strcmp(argv[iarg], "-seed") == 0)   seed = atoi(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-idx") == 0) idx = atoi(argv[++iarg]);
 		else if (strcmp(argv[iarg], "-out") == 0)   outPath = argv[++iarg];//sprintf(outPath,"%s",argv[++iarg]);
 		else if (strcmp(argv[iarg], "-ls_number") == 0) ls_number = atoi(argv[++iarg]);
@@ -2088,15 +2319,16 @@ int main(int argc, char** argv)
 	switch (problem->alg)
 	{
 		/** two relevant models for MDMWNPP from literature **/
-	case 0: { /*cout << "COAM model Nikolic et. al. " << endl;*/  set<pair<int, int>> C_prime; s = cplex_COAM(C_prime);                     break;                 }
-	case 1: { /*cout << "Faria et al. model (2020)  " << endl;*/  set<pair<int, int>> C_prime; s = cplex_init_faria(C_prime);               break;        	    }
-	case 2: { /*cout << "Greedy: MDRGH " << endl;*/  s = MDRGH(problem->d);              break;        	    }
-	case 3: { /*cout << "Greedy: KMeans-based Heuristic " << endl;*/  s = KMeansHeuristic(iter_move);     break;        	    }
-	case 4: { /*cout << "CMSA... " << endl;*/  s = CMSA();                          break;                 }
-	case 5: { /*cout << "Adapted-CMSA " << endl;*/  s = Adapted_CMSA();                   break;                 }
-	case 6: { /*cout << "Deep-CMSA " << endl;*/  s = Adapted_CMSA();                   break;                 }
- 
-	default: { /*cout << "Kojic MIP model (2010) " << endl;*/  cplex_init_kojic();               break;                 }   //TODO:未实现返回solution
+        case 0: { /*cout << "COAM model Nikolic et. al. " << endl;*/  set<pair<int, int>> C_prime; s = cplex_COAM(C_prime);                     break;                 }
+        case 1: { /*cout << "Faria et al. model (2020)  " << endl;*/  set<pair<int, int>> C_prime; s = cplex_init_faria(C_prime);               break;        	    }
+        case 2: { /*cout << "Greedy: MDRGH " << endl;*/  s = MDRGH(problem->d);              break;        	    }
+        case 3: { /*cout << "Greedy: KMeans-based Heuristic " << endl;*/  s = KMeansHeuristic(iter_move);     break;        	    }
+        case 4: { /*cout << "CMSA... " << endl;*/  s = CMSA();                          break;                 }
+        case 5: { /*cout << "Adapted-CMSA " << endl;*/  s = Adapted_CMSA();                   break;                 }
+        case 6: { /*cout << "Deep-CMSA " << endl;*/  s = Adapted_CMSA();                   break;                 }
+        case 7: { /*cout << "Adapted-CMSA-SA " << endl;*/  s = Adapted_CMSA();                   break;                 }
+
+        default: { /*cout << "Kojic MIP model (2010) " << endl;*/  cplex_init_kojic();               break;                 }   //TODO:未实现返回solution
 
 	}
 	//Example of a call: ./mdmwnpp -f mdtwnpp_500_20a.txt -n 50 -m 4 -k 3 -alg 5 -cmsa_cplex_time 3  -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.5 -alphaUB 0.9 -alpha_red 0.05 -t_prop 0.4

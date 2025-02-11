@@ -43,17 +43,21 @@ string run_command(string cmd) {
 
 struct Param {
     int tILP;
-    double aLB, aUB, aRed, tProp;
+    double aLB, aUB, aRed, tProp, T_max, T_min, beta;
     Param() = default;
-    explicit Param(int tILP_, double aLB_, double aUB_, double aRed_, double tProp_)
-    : tILP(tILP_), aLB(aLB_), aUB(aUB_), aRed(aRed_), tProp(tProp_) {}
+    explicit Param(int tILP_, double aLB_, double aUB_, double aRed_, double tProp_,
+                    double T_max_, double T_min_, double beta_)
+    : tILP(tILP_), aLB(aLB_), aUB(aUB_), aRed(aRed_), tProp(tProp_)
+    , T_max(T_max_), T_min(T_min_), beta(beta_) {}
 };
 
 const unordered_map<int, Param> params = {
-        {50, Param(2, 0.518, 0.898, 0.093, 0.557)},
-        {100, Param(2, 0.302, 0.961, 0.049, 0.264)},
-        {500, Param(6, 0.302, 0.948, 0.239, 0.069)},
+        {50, Param(2, 0.518, 0.898, 0.093, 0.557, 2.0, 0.2, 2.0)},
+        {100, Param(2, 0.302, 0.961, 0.049, 0.264, 5.0, 0.5, 1.5)},
+        {500, Param(6, 0.302, 0.948, 0.239, 0.069, 8.0, 0.8, 1.0)},
 };
+
+//TODO: pass T_max, T_min, beta to run_single_instance
 
 const string work_dir = "/home/edward/code/cpp/adapt-cmsa-mdmwnpp/";
 const string bin_path = work_dir + "source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp";
