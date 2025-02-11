@@ -1470,7 +1470,7 @@ double LSbest(vector<int>& sol)
 
   
 /** Basic CMSA **/
-void CMSA()
+vector<int> CMSA()
 {
 
 	int cmsa_iter_best = 0; int cmsa_iter = 1;
@@ -1527,6 +1527,7 @@ void CMSA()
 	}
 
 	// report stats:
+    return s_bsf;
     /*
 	cout << "obj : " << obj_best << endl;
 	end_time = timer.elapsed_time(Timer::VIRTUAL);
@@ -1737,8 +1738,7 @@ vector<int> formSubinstanceDeep(std::vector<vector<pair<int, int>>>& C_prime)
 }
 
 
-vector<int> formSubinstance(std::vector<vector<pair<int, int>>>& C_prime)
-{
+vector<int> formSubinstance(std::vector<vector<pair<int, int>>>& C_prime) {
 	//cout << "Form subinstance based on a series of subinstances and its UBs... " << C_prime.size() << endl;
 	unordered_map<pair<int, int>, int, hash_pair> Appearances;
 
@@ -1812,7 +1812,7 @@ vector<int> formSubinstance(std::vector<vector<pair<int, int>>>& C_prime)
 }
 
 /** ADAPT-CMSA + LS **/
-void Adapted_CMSA()
+vector<int> Adapted_CMSA()
 {
 	double eps = 1;
 	int cmsa_iter_best = 0; int cmsa_iter = 0; int ls_iter_impr = 0;
@@ -1966,50 +1966,7 @@ void Adapted_CMSA()
 
 	}
 
-	// report stats:        
-	bool valid = validityCheck(s_bsf);
-    /*
-	cout << "value: " << std::fixed << obj_best << endl;
-	cout << "time: " << (end_time - cur_time) << endl;
-	cout << "CMSA iter best: " << cmsa_iter_best << endl;
-	cout << "CMSA iter overall: " << cmsa_iter << endl;
-	cout << "LS iter improved: " << ls_iter_impr << endl;
-	cout << "validity: " << valid << endl;
-	cout << "solution: ";
-	for (auto x : s_bsf)
-		cout << x << " ";
-
-	// store the solution in a file: 
-	ofstream myfileOut(outPath + std::to_string(problem->n) + "_" + std::to_string(problem->m)
-                       + "_" + std::to_string(problem->k) + "_" + std::to_string(problem->d)
-                       + "_" + std::to_string(problem->alg)
-                       + "_" + std::to_string(int(n_a)) + "_" + std::to_string(int(age_max))
-                       + "_" + std::to_string(int(cmsa_cplex_time))
-                       + "_" + std::to_string(idx) + ".out");
-	// write  into a file
-	myfileOut << "value: " << std::fixed << obj_best << endl;
-	myfileOut << "time: " << (end_time - cur_time) << endl;
-	myfileOut << "CMSA iter best: " << cmsa_iter_best << endl;
-	myfileOut << "CMSA iter overall: " << cmsa_iter << endl;
-	myfileOut << "LS iter improved: " << ls_iter_impr << endl;
-	myfileOut << "validity: " << valid << endl;
-	myfileOut << "solution: ";
-	  
-	for (auto x : s_bsf)
-		myfileOut << x << " ";
-
-	myfileOut.close();
-     */
-    //Write CSV Output
-    cout << problem->n << ", "              // n
-        << problem->m << ", "               // m
-        << problem->k << ", "               // k
-        << std::fixed << obj_best << ", "   // value
-        << (end_time - cur_time) << ", "    // time
-        << valid << ", ";                   // valid
-    for (auto x : s_bsf)
-        cout << x << " ";                   // solution
-    cout << endl;
+    return s_bsf;
 }
 
 pair<double, vector<int>> random_solution() {
@@ -2097,6 +2054,24 @@ void read_parameters(int argc, char** argv) {
 
 }
 
+
+// report status
+void output(vector<int> &s) {
+    // write CSV Output
+    bool valid = validityCheck(s);
+    double obj = objective(s);
+    double end_time = timer.elapsed_time(Timer::VIRTUAL);
+    cout << problem->n << ", "              // n
+        << problem->m << ", "               // m
+        << problem->k << ", "               // k
+        << std::fixed << obj << ", "   // value
+        << (end_time - cur_time) << ", "    // time
+        << valid << ", ";                   // valid
+    for (auto x : s)
+        cout << x << " ";                   // solution
+    cout << endl;
+}
+
 int main(int argc, char** argv)
 {
     std::ios::sync_with_stdio(false);   //关闭和stdio同步
@@ -2108,22 +2083,24 @@ int main(int argc, char** argv)
 	read_parameters(argc, argv);
 	//cout << "Read from file ..." << endl;
 	ulazpod();
+    vector<int> s;
 
 	switch (problem->alg)
 	{
 		/** two relevant models for MDMWNPP from literature **/
-	case 0: { cout << "COAM model Nikolic et. al. " << endl;  set<pair<int, int>> C_prime; cplex_COAM(C_prime);                     break;                 }
-	case 1: { cout << "Faria et al. model (2020)  " << endl;  set<pair<int, int>> C_prime; cplex_init_faria(C_prime);               break;        	    }
-	case 2: { cout << "Greedy: MDRGH " << endl;  MDRGH(problem->d);              break;        	    }
-	case 3: { cout << "Greedy: KMeans-based Heuristic " << endl;  KMeansHeuristic(iter_move);     break;        	    }
-	case 4: { cout << "CMSA... " << endl;  CMSA();                          break;                 }
-	case 5: { /*cout << "Adapted-CMSA " << endl;*/  Adapted_CMSA();                   break;                 }
-	case 6: { cout << "Deep-CMSA " << endl;  Adapted_CMSA();                   break;                 }
+	case 0: { /*cout << "COAM model Nikolic et. al. " << endl;*/  set<pair<int, int>> C_prime; s = cplex_COAM(C_prime);                     break;                 }
+	case 1: { /*cout << "Faria et al. model (2020)  " << endl;*/  set<pair<int, int>> C_prime; s = cplex_init_faria(C_prime);               break;        	    }
+	case 2: { /*cout << "Greedy: MDRGH " << endl;*/  s = MDRGH(problem->d);              break;        	    }
+	case 3: { /*cout << "Greedy: KMeans-based Heuristic " << endl;*/  s = KMeansHeuristic(iter_move);     break;        	    }
+	case 4: { /*cout << "CMSA... " << endl;*/  s = CMSA();                          break;                 }
+	case 5: { /*cout << "Adapted-CMSA " << endl;*/  s = Adapted_CMSA();                   break;                 }
+	case 6: { /*cout << "Deep-CMSA " << endl;*/  s = Adapted_CMSA();                   break;                 }
  
-	default: { cout << "Kojic MIP model (2010) " << endl;  cplex_init_kojic();               break;                 }
+	default: { /*cout << "Kojic MIP model (2010) " << endl;*/  cplex_init_kojic();               break;                 }   //TODO:未实现返回solution
 
 	}
 	//Example of a call: ./mdmwnpp -f mdtwnpp_500_20a.txt -n 50 -m 4 -k 3 -alg 5 -cmsa_cplex_time 3  -cmsa_greedy 2 -cmsa_milp 0 -n_a 1 -alphaLB 0.5 -alphaUB 0.9 -alpha_red 0.05 -t_prop 0.4
+    output(s);
 
 	return 0;
 } /* main */

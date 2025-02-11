@@ -7,6 +7,7 @@
 
 #include <boost/program_options.hpp>
 
+
 #include <cstdio>
 #include <iostream>
 #include <fstream>
@@ -58,11 +59,11 @@ const string work_dir = "/home/edward/code/cpp/adapt-cmsa-mdmwnpp/";
 const string bin_path = work_dir + "source_codes/ADAPT_CMSA/bazel-bin/mdmwnpp";
 const string data_dir = work_dir + "instances/";
 const unordered_map<string, string> data_file_names = {
-//        {"a", "mdtwnpp_500_20a.txt"},
+        {"a", "mdtwnpp_500_20a.txt"},
 //        {"b", "mdtwnpp_500_20b.txt"},
 //        {"c", "mdtwnpp_500_20c.txt"},
 //        {"d", "mdtwnpp_500_20d.txt"},
-        {"e", "mdtwnpp_500_20e.txt"},
+//        {"e", "mdtwnpp_500_20e.txt"},
 };
 
 const string results_dir = work_dir + "evaluate/results/";
@@ -80,27 +81,27 @@ struct Instance {
 const vector<Instance> instances = {
 //        Instance({50}, {2}, {2}, 600),
 
-//        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),   //2h
+        Instance({50, 100, 500}, {2, 5, 10, 20}, {2}, 600),   //2h
 
 
 //        Instance({50, 100}, {2, 3, 4, 5, 10, 15, 20}, {3, 4}, 1200),
-//        Instance({50, 100}, {10, 15, 20}, {3, 4}, 1200),    //4h
-//        Instance({50, 100}, {4, 5}, {3, 4}, 1200),      //2.65h
-        Instance({50, 100}, {2, 3}, {3, 4}, 1200),      //2.65h
+        Instance({50, 100}, {10, 15, 20}, {3, 4}, 1200),    //4h
+        Instance({50, 100}, {4, 5}, {3, 4}, 1200),      //2.65h
+//        Instance({50, 100}, {2, 3}, {3, 4}, 1200),      //2.65h
 
 
 //        Instance({50, 100, 500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),
-        Instance({50}, {2, 5, 10, 20}, {5, 10, 20}, 1800),      //6h
-        Instance({100}, {2, 5}, {5, 10, 20}, 1800),             //3h
+//        Instance({50}, {2, 5, 10, 20}, {5, 10, 20}, 1800),      //6h
+//        Instance({100}, {2, 5}, {5, 10, 20}, 1800),             //3h
 //        Instance({100}, {10, 20}, {5, 10, 20}, 1800),           //3h
 //        Instance({500}, {2, 5, 10, 20}, {5, 10, 20}, 1800),     //6h
 };
 
 
-void run_single_instance(const string& set_name, int n, int m, int k, int t) {
+void run_single_instance(const string& set_name, int n, int m, int k, int t, int alg = 5) {
     string file_path = data_dir + data_file_names.at(set_name);
     auto&& param = params.at(n);
-    auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 5,
+    auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", alg,
                         "-cmsa_cplex_time", 3, "-cmsa_greedy", 2, "-cmsa_milp", 0, "-n_a", 1, "-alphaLB", param.aLB, "-alphaUB", param.aUB,
                         "-alpha_red", param.aRed, "-t_prop", param.tProp, "-t", t);
     cout << cmd << endl;
@@ -126,7 +127,7 @@ void run_instances() {
                 for (auto &&m : instance.mSet) {
                     for (auto &&k : instance.kSet) {
                         auto&& param = params.at(n);
-                        auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 5,
+                        auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 0,
                                             "-cmsa_cplex_time", 3, "-cmsa_greedy", 2, "-cmsa_milp", 0, "-n_a", 1, "-alphaLB", param.aLB, "-alphaUB", param.aUB,
                                             "-alpha_red", param.aRed, "-t_prop", param.tProp, "-t", instance.t);
                         cout << cmd << endl;
@@ -307,11 +308,15 @@ int main(int argc, char* argv[]) {
         }
         if (vm.count("single")) {
             auto run_params = vm["single"].as<vector<string>>();
-            if (run_params.size() != 5) {
-                std::cerr << "Option 'single' accepts 5 arguments: set_name n m k t.\n";
+            if (run_params.size() < 5 || run_params.size() > 6) {
+                std::cerr << "Option 'single' accepts 5 or 6 arguments: set_name n m k t [alg].\n";
                 return 0;
             }
-            run_single_instance(run_params[0], stoi(run_params[1]), stoi(run_params[2]), stoi(run_params[3]), stoi(run_params[4]));
+            int alg = 5;
+            if (run_params.size() == 6) {
+                alg = stoi(run_params[5]);
+            }
+            run_single_instance(run_params[0], stoi(run_params[1]), stoi(run_params[2]), stoi(run_params[3]), stoi(run_params[4]), alg);
         }
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
