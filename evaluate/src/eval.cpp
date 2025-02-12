@@ -106,8 +106,9 @@ void run_single_instance(const string& set_name, int n, int m, int k, int t, int
     string file_path = data_dir + data_file_names.at(set_name);
     auto&& param = params.at(n);
     auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", alg,
-                        "-cmsa_cplex_time", 3, "-cmsa_greedy", 2, "-cmsa_milp", 0, "-n_a", 1, "-alphaLB", param.aLB, "-alphaUB", param.aUB,
-                        "-alpha_red", param.aRed, "-t_prop", param.tProp, "-t", t);
+                        "-cmsa_cplex_time", 3, "-cmsa_greedy", 2, "-cmsa_milp", 0, "-n_a", 1, "-alphaLB",
+                        param.aLB, "-alphaUB", param.aUB, "-alpha_red", param.aRed, "-t_prop", param.tProp,
+                        "-t", t, "-T_max", param.T_max, "-T_min", param.T_min, "-beta", param.beta);
     cout << cmd << endl;
 
     auto &&output = run_command(cmd);
@@ -131,9 +132,12 @@ void run_instances() {
                 for (auto &&m : instance.mSet) {
                     for (auto &&k : instance.kSet) {
                         auto&& param = params.at(n);
-                        auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 0,
-                                            "-cmsa_cplex_time", 3, "-cmsa_greedy", 2, "-cmsa_milp", 0, "-n_a", 1, "-alphaLB", param.aLB, "-alphaUB", param.aUB,
-                                            "-alpha_red", param.aRed, "-t_prop", param.tProp, "-t", instance.t);
+                        //set alg to control which algorithm to run
+                        auto cmd = edward::join_fields(bin_path, "-f", file_path, "-n", n, "-m", m, "-k", k, "-alg", 7, //use Adpated_CMSA_SA
+                                            "-cmsa_cplex_time", 3, "-cmsa_greedy", 2, "-cmsa_milp", 0, "-n_a", 1,
+                                            "-alphaLB", param.aLB, "-alphaUB", param.aUB, "-alpha_red", param.aRed,
+                                            "-t_prop", param.tProp, "-t", instance.t, "-T_max", param.T_max,
+                                            "-T_min", param.T_min, "-beta", param.beta);
                         cout << cmd << endl;
                         auto &&output = run_command(cmd);
                         ofstream ofs(result_file, ios::app);
